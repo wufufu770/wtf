@@ -4,7 +4,7 @@
 
 ## 用途
 
-为任何支持 SKILL.md 约定（Anthropic Agent Skills 规范 / agentskills.io 事实标准）的 Agent 提供一套 **CTF 解题**知识底座：六题型知识库（web / pwn / reverse / crypto / forensics / misc，v0.3 已填充五段式假设条目 24 条）+ REFLIGHT 经验回流协议（含 7 条本机可复现实战闭环记录）。
+为任何支持 SKILL.md 约定（Anthropic Agent Skills 规范 / agentskills.io 事实标准）的 Agent 提供一套 **CTF 解题**知识底座：十题型知识库（web / pwn / reverse / crypto / forensics / misc / AI 安全 / 移动安全 / 信息搜集·数据安全 / 编码分析，v0.3 已填充五段式假设条目 40 条）+ REFLIGHT 经验回流协议（含 7 条本机可复现实战闭环记录）。
 
 ## 目录结构
 
@@ -12,7 +12,7 @@
 wtf/
 ├── ctf/                      # skill 本体（加载单元）
 │   ├── SKILL.md              # 索引 + 触发 + 题型路由表 + 收尾回流
-│   └── references/           # 6 份：category-web / pwn / reverse / crypto / forensics / misc
+│   └── references/           # 10 份：category-web / pwn / reverse / crypto / forensics / misc / aiml / mobile / recon / encoding
 ├── shared/                   # 双 skill 共用层（本仓库为自包含副本，见下方同步义务）
 │   ├── REFLIGHT.md           # 回流协议：五态状态机 + 裁决词 + 复跑记录
 │   └── tools/                # 工具用法唯一真相源（6 份 + INDEX 路由表）

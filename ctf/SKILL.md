@@ -1,6 +1,6 @@
 ---
 name: ctf
-description: Solve CTF competition challenges and flag-based security puzzles across web, pwn, reverse, crypto, forensics, and misc categories. Use when the user mentions CTF, capture the flag, a challenge, a flag format (flag{...}, CTF{...}), lab platforms like HackTheBox/HTB, TryHackMe/THM, BUUCTF, crackmes, or hands-on puzzle solving with provided binaries (ELF/APK), pcaps, ciphertexts (RSA/AES), stego images, or a web instance; also when the user says 做题, 赛题, 解题, 打靶 with a security context. Make sure to use this skill whenever a challenge file or flag format is present, even if the user just says "help me solve this". Do NOT use for authorized real-world penetration testing (use the pentest skill instead), for vulnerability news or CVE analysis without a challenge, for general reverse-engineering with no flag involved, for math competitions or escape-room riddles with no security context, or for writing crawlers and dev tooling.
+description: Solve CTF competition challenges and flag-based security puzzles across web, pwn, reverse, crypto, forensics, misc, AI security (LLM/prompt injection), mobile, OSINT/recon/encoding categories. Use when the user mentions CTF, capture the flag, a challenge, a flag format (flag{...}, CTF{...}), lab platforms like HackTheBox/HTB, TryHackMe/THM, BUUCTF, crackmes, or hands-on puzzle solving with provided binaries (ELF/APK), pcaps, ciphertexts (RSA/AES), stego images, LLM chatbot challenges, or a web instance; also when the user says 做题, 赛题, 解题, 打靶 with a security context. Make sure to use this skill whenever a challenge file or flag format is present, even if the user just says "help me solve this". Do NOT use for authorized real-world penetration testing (use the pentest skill instead), for vulnerability news or CVE analysis without a challenge, for general reverse-engineering with no flag involved, for math competitions or escape-room riddles with no security context, or for writing crawlers and dev tooling.
 ---
 
 # CTF Skill（夺旗赛解题）
@@ -19,8 +19,12 @@ description: Solve CTF competition challenges and flag-based security puzzles ac
 | Pwn | `references/category-pwn.md` | ELF 附件、栈溢出、堆利用、ROP、格式化字符串、kernel 题 |
 | Crypto | `references/category-crypto.md` | 密文串、RSA/AES/椭圆曲线参数、编码套娃、随机数弱点 |
 | Reverse | `references/category-reverse.md` | 二进制/APK 校验逻辑、反编译、混淆、自修改代码 |
-| Forensics | `references/category-forensics.md` | pcap 流量包、图片隐写、内存镜像、磁盘恢复、日志分析 |
-| Misc | `references/category-misc.md` | 杂项：OSINT、编码迷宫、PPC 编程题、区块链、AI 题 |
+| Forensics | `references/category-forensics.md` | pcap 流量包、图片隐写、内存镜像、磁盘恢复、日志分析（隐写分析主库） |
+| AI 安全 | `references/category-aiml.md` | LLM chatbot、prompt 泄露/注入、越狱、模型文件附件（.gguf/.pkl） |
+| Mobile | `references/category-mobile.md` | APK/IPA 附件、adb/frida、证书锁定、root 检测绕过 |
+| 信息搜集 | `references/category-recon.md` | 只给域名/用户名/照片、OSINT、泄露数据、数据安全甄别 |
+| 编码分析 | `references/category-encoding.md` | 乱码串、非常规编码、零宽字符、无密钥解码 |
+| Misc | `references/category-misc.md` | 杂项：PPC 编程题、区块链、编码迷宫（OSINT/编码已拆出） |
 
 分流规则：
 
