@@ -7,6 +7,7 @@ changelog:
   - "[2026-10-15] 初始空壳，等待首个回流条目"
   - "[2026-10-15] v0.2：条目模板升级为五段式假设条目 + 机器可校验裁决词（REFLIGHT 回流协议，见 ../../shared/REFLIGHT.md）"
   - "[2026-10-15] v0.3：M2 填充 4 条（verified 1 / hypothesis 3）"
+  - "[2026-10-16] v0.4：「升级」字段边化——跳转目标改 [[条目名]] 图边引用（REFLIGHT §3）"
 ---
 
 # 题型：Misc
@@ -41,7 +42,7 @@ changelog:
 - **判定标准**：PASS = 解链输出 flag 格式明文；FAIL = 某层解码报错（padding 异常 → 补 `=`；魔数对不上 → 换 zlib/bz2/lzma 再试）。
 - **裁决词**：PASS
 - **来源**：M2 实测复跑（evidence T5）；CTF-wiki 编码与压缩
-- **升级**：解出的是文件再走 forensics 文件识别；嵌套超 4 层考虑脚本自动化循环（按头字节路由解码器）。
+- **升级**：解出的是文件再走 [[file + strings 零依赖侦察]] 与 [[binwalk 签名扫描与提取]]；嵌套超 4 层考虑脚本自动化循环（按头字节路由解码器）。
 - **关键差异**：模型盲区——逐层特征识别（b64 字符集/gzip `\x1f\x8b`/zlib `\x78`）替代"猜哪种编码"；解码报错时先补 padding 再换算法。
 
 ### 复跑记录（verified / refuted / inconclusive 必备，append-only）

@@ -6,11 +6,11 @@
 
 | 约束项 | 本仓库做法 |
 |---|---|
-| frontmatter | 仅 `name` + `description` 两个公开通用字段；name ≤64 字符、小写连字符、与目录名一致；description ≤1024 字符（实测 933 字符，见 §4）。**不使用** `allowed-tools`、`metadata` 等非通用或平台专有字段 |
+| frontmatter | 仅 `name` + `description` 两个公开通用字段；name ≤64 字符、小写连字符、与目录名一致；description ≤1024 字符（实测 1019 字符，见 §4）。**不使用** `allowed-tools`、`metadata` 等非通用或平台专有字段 |
 | 专有语法 | 全库禁用：特定 Agent 的工具调用格式、`{{...}}` 模板变量、平台专有 hook/拦截指令、`<EXTREMELY-IMPORTANT>` 类社区私有标签。所有指令用通用祈使句书写 |
 | 引用方式 | references 全部纯 markdown，相对路径 + 正斜杠，**引用只许一层深**（SKILL.md → reference，不嵌套）；>100 行的引用文件头部加 TOC |
 | 无人类向文件 | skill 目录（ctf/）内不放 README/CHANGELOG/INSTALLATION（PORTABILITY.md、README.md 与 tests/ 置于 skill 目录之外，不参与加载） |
-| 行数经济 | SKILL.md 正文 61 行（≤150），只做索引+触发+回流，技术细节全部外置 |
+| 行数经济 | SKILL.md 正文 76 行（≤150；v0.4 增「单题工作区」一节后仍达标），只做索引+触发+回流，技术细节全部外置 |
 
 ## 2. 兼容边界（如实声明，不掩盖）
 
@@ -26,10 +26,11 @@
 
 - 加载验证：目标 Agent 装载后，用 tests/trigger-regression.md 的适用用例跑触发回归（每条 3 次取多数）。
 - 结构验证：name=目录名、description 长度、SKILL.md 行数、引用一层深，四项可用脚本静态检查。
-- 回流质量验证：tests/reflight-static-check.py 做静态校验——裁决词正则 `^(PASS|FAIL|INCONCLUSIVE)$` + 状态词枚举 + 复跑表存在性。
+- 回流质量验证：tests/reflight-static-check.py 做静态校验——裁决词正则 `^(PASS|FAIL|INCONCLUSIVE)$` + 状态词枚举 + 复跑表存在性 + 图边引用存在性（v0.4 第 4 检：[[条目名]] 必须命中全库条目标题）。
 
-## 4. 实测指标（v0.3，2026-10-16 发布版）
+## 4. 实测指标（v0.4，2026-10-16 更新）
 
-- ctf/SKILL.md：61 行（≤150 达标）；description 933 字符（≤1024 达标）。
-- ctf 六题型知识库：五段式条目 24 条（6 文件 × 4 条），已裁决 14 条（PASS 8 / FAIL 1 / INCONCLUSIVE 5）、hypothesis 10 条（以 `rg -o "裁决词\*\*：(PASS|FAIL|INCONCLUSIVE)"` 实测为准）。
+- ctf/SKILL.md：76 行（≤150 达标；v0.4 增「单题工作区」一节后仍达标）；description 1019 字符（≤1024 达标）。
+- ctf 十题型知识库：五段式条目 40 条（10 文件 × 4 条）；图边 9 条 / 节点 60 个（v0.4「升级」字段边化，以 tests/reflight-static-check.py 输出为准）。
+- v0.4 变更面：ctf/SKILL.md（单题工作区 + 死锁条款引用 + 图边引用）、shared/REFLIGHT.md、shared/tools/INDEX.md、六份原始题型文件「升级」字段边化、tests/reflight-static-check.py（第 4 检）——shared 与 tests 均与 SKILL-DUO 源及 wpt 仓库字节同源（`diff -r` 零差异）。
 - 跨 Agent 通用性硬约束逐项复核：frontmatter 双字段、无专有语法、一层深引用、无人类向文件——均未回退。

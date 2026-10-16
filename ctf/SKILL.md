@@ -49,17 +49,27 @@ description: Solve CTF competition challenges and flag-based security puzzles ac
 - 侦察扫描类：`../shared/tools/recon-scanning.md`（nmap/ffuf，赛题环境探测用）
 - 证据与报告类：`../shared/tools/evidence-and-reporting.md`（writeup 素材留存规范）
 
-## 5. 收尾回流条款（必须执行，协议见 `../shared/REFLIGHT.md`）
+## 5. 单题工作区（workspace，v0.4）
+
+- 解题状态放文件树，不放对话历史。每题在当前工作目录建 `workspace/<题号-短名>/`，固定布局：
+  - `challenge.md`：人机共读题面——原始描述、附件清单、自己复述的解题目标；
+  - `metadata.json`：脚本可读元数据——题型、分值、连接信息、flag 格式；
+  - `attachments/`：原始附件，只读不改动；
+  - `notes.md`：过程态——当前假设、死路记录、临时 payload；**长输出与中间数据一律落 `artifacts/`，notes 里只写相对路径引用，不整段贴回对话**（增量纪律：题面复述只写增量，长数据引用而非粘贴）；
+  - `artifacts/`：exploit 脚本、反编译产物等生成物。
+- 边界：workspace 是**单题入口**，不是隐藏状态系统——题目的持久知识仍按五段式回流 `references/category-*.md`（§6）；workspace 只承载本题执行态，归档时只保留可回流部分。
+
+## 6. 收尾回流条款（必须执行，协议见 `../shared/REFLIGHT.md`）
 
 题目结束（无论解出与否）时，把新学到的技术写回知识库，遵守 REFLIGHT 协议：
 
-1. 条目模板 = 五段式假设条目：**假设 / 验证步骤 / 判定标准 / 裁决词 / 来源**（REFLIGHT §3），一技术一条目，写入本次命中的 `references/category-*.md`。
+1. 条目模板 = 五段式假设条目：**假设 / 验证步骤 / 判定标准 / 裁决词 / 来源**（REFLIGHT §3），一技术一条目，写入本次命中的 `references/category-*.md`；「升级」字段跳转目标用 `→ [[条目名]]` 图边引用（REFLIGHT §3）。
 2. 裁决词只允许标准词 **PASS / FAIL / INCONCLUSIVE**（REFLIGHT §2）；状态机：hypothesis → verifying → verified / refuted / inconclusive（REFLIGHT §1）；本机跑通的标 verified，仅思路的停在 hypothesis。
-3. **失败样本优先回流**：卡壳超过阈值时长的思路盲区、被证伪的假设路径，单独记 refuted 条目，必须附 FAIL 复跑记录 + 失败原因 + "下一步转哪个新假设"——这是下一轮出题方的老套路。
-4. 状态与复跑记录必须匹配（verified ≥1 条 PASS 记录，见 REFLIGHT §4）；工具新用法写回 `../shared/tools/` 对应文件，不进题型文件（去重原则）。
+3. **失败样本优先回流**：卡壳超过阈值时长的思路盲区、被证伪的假设路径，单独记 refuted 条目，必须附 FAIL 复跑记录 + 失败原因 + "下一步转哪个新假设"——这是下一轮出题方的老套路。**死锁条款（REFLIGHT §1）**：同一假设连续 FAIL ≥3 次禁止原路复跑，强制转新假设或标 inconclusive 写明缺口。
+4. 状态与复跑记录必须匹配（verified ≥1 条 PASS 记录，见 REFLIGHT §4）；工具新用法写回 `../shared/tools/` 对应文件，不进题型文件（去重原则）；新条目写入前过 INDEX 查重 + 熵控五问（REFLIGHT §5）。
 5. writeup 级复盘属于人类向产出，放 skill 目录之外，不占知识库。
 
-## 6. 触发与停用逻辑
+## 7. 触发与停用逻辑
 
 - 触发词：CTF / capture the flag / 赛题 / 做题 / 解题 / flag / flag{...} / HTB、THM、BUUCTF 等平台名 / 附件题（给了 ELF、pcap、密文、隐写图）/ crackme / 打靶挑战。
 - 停用信号：真实目标授权测试（转 pentest skill）、漏洞新闻与 CVE 复述（无需加载）、爬虫与开发任务（无需加载）、数学竞赛与密室解谜（无安全语境，无需加载）、无 flag 的常规逆向作业（无需加载）。

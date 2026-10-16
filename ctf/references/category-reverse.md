@@ -7,6 +7,7 @@ changelog:
   - "[2026-10-15] 初始空壳，等待首个回流条目"
   - "[2026-10-15] v0.2：条目模板升级为五段式假设条目 + 机器可校验裁决词（REFLIGHT 回流协议，见 ../../shared/REFLIGHT.md）"
   - "[2026-10-15] v0.3：M2 填充 4 条（verified 2 / inconclusive 1 / hypothesis 1）"
+  - "[2026-10-16] v0.4：「升级」字段边化——跳转目标改 [[条目名]] 图边引用（REFLIGHT §3）"
 ---
 
 # 题型：Reverse
@@ -41,7 +42,7 @@ changelog:
 - **判定标准**：PASS = grep 命中预期关键词（含部分命中）；FAIL = 零命中（先查是否加壳/明文是否运行时解密生成）。
 - **裁决词**：PASS
 - **来源**：M2 实测复跑（evidence T6）；GNU binutils strings 手册
-- **升级**：零命中转 `../shared/tools/forensics-stego.md` 的 file/魔数条目排查壳，再上反编译。
+- **升级**：零命中转 [[file + strings 零依赖侦察]] 排查壳（[[UPX 壳识别]]），再上 [[反编译工具链优先级]]。
 - **关键差异**：strings 输出可能因相邻字符合并/截断——命中关键词即算成功，勿期待 flag 原样完整出现；`-n` 阈值过低会噪声爆炸，6 起步。
 
 ### 复跑记录（verified / refuted / inconclusive 必备，append-only）
@@ -60,7 +61,7 @@ changelog:
 - **判定标准**：PASS = 魔数与本机 MAGIC_NUMBER 一致（可直接反编译）或查表定位到具体版本；FAIL = 魔数无法匹配任何已知版本（考虑魔数被篡改的反调试套路）。
 - **裁决词**：PASS
 - **来源**：M2 实测复跑（evidence T8）；CTF-wiki Python 逆向；CPython importlib 源码 MAGIC_NUMBER
-- **升级**：版本确定后：3.9 前 uncompyle6、3.9+ pycdc/pycdas；PyInstaller 先 pyinstxtractor。
+- **升级**：版本确定后转 [[反编译工具链优先级]]（3.9 前 uncompyle6、3.9+ pycdc/pycdas；PyInstaller 先 pyinstxtractor）。
 
 ### 复跑记录（verified / refuted / inconclusive 必备，append-only）
 | # | 日期 | 环境/靶场 | 命令或脚本 | 裁决词 | 工件路径 | 备注 |

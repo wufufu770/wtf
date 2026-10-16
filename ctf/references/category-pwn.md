@@ -7,6 +7,7 @@ changelog:
   - "[2026-10-15] 初始空壳，等待首个回流条目"
   - "[2026-10-15] v0.2：条目模板升级为五段式假设条目 + 机器可校验裁决词（REFLIGHT 回流协议，见 ../../shared/REFLIGHT.md）"
   - "[2026-10-15] v0.3：M2 填充 4 条（verified 1 / inconclusive 1 / hypothesis 2）"
+  - "[2026-10-16] v0.4：「升级」字段边化——跳转目标改 [[条目名]] 图边引用（REFLIGHT §3）"
 ---
 
 # 题型：Pwn
@@ -41,7 +42,7 @@ changelog:
 - **判定标准**：PASS = 输出中出现栈地址/预期泄露值；FAIL = 程序过滤了 `%` 字符或用 `printf("%s", input)` 固定格式。
 - **裁决词**：PASS
 - **来源**：M2 实测复跑（evidence T7）；CTF-wiki 格式化字符串漏洞
-- **升级**：定位到可写 GOT 的偏移后转 `%n` 任意写；配合 `../shared/tools/binary-crypto.md` 的 gdb 条目确认偏移。
+- **升级**：定位到可写 GOT 的偏移后转 `%n` 任意写（新假设，待回流建条目）；配合 [[gdb + GEF/pwndbg 插件]] 确认偏移。
 - **关键差异**：x86-64 前 5 个 `%p` 落在寄存器参数（RSI/RDX/RCX/R8/R9），要从第 6 个开始数栈——按 32 位经验从 `%1$p` 数会偏。
 
 ### 复跑记录（verified / refuted / inconclusive 必备，append-only）

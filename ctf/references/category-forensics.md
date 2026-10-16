@@ -7,6 +7,7 @@ changelog:
   - "[2026-10-15] 初始空壳，等待首个回流条目"
   - "[2026-10-15] v0.2：条目模板升级为五段式假设条目 + 机器可校验裁决词（REFLIGHT 回流协议，见 ../../shared/REFLIGHT.md）"
   - "[2026-10-15] v0.3：M2 填充 4 条（verified 1 / inconclusive 1 / hypothesis 2）"
+  - "[2026-10-16] v0.4：「升级」字段边化——跳转目标改 [[条目名]] 图边引用（REFLIGHT §3）"
 ---
 
 # 题型：Forensics
@@ -40,7 +41,7 @@ changelog:
 - **判定标准**：PASS = IEND 后存在可读/可解数据；FAIL = IEND 即文件尾（转 LSB/调色板/IDAT 压缩流分析）。
 - **裁决词**：PASS
 - **来源**：M2 实测复跑（evidence T4）；PNG 规范（ISO/IEC 15948 chunk 结构）
-- **升级**：PASS 后对取出数据按 `../shared/tools/forensics-stego.md` 的 file/魔数条目二次识别嵌套文件；FAIL 转 LSB 与 CRC 校验（改宽高隐写 CRC 必错）。
+- **升级**：PASS 后对取出数据按 [[file + strings 零依赖侦察]] 二次识别嵌套文件；FAIL 转 LSB 与 CRC 校验新假设（改宽高隐写 CRC 必错）。
 - **关键差异**：模型盲区——只顾像素不看结构；chunk 解析还能暴露"改宽高"隐写（IDAT 数据量与宽高不匹配）。
 
 ### 复跑记录（verified / refuted / inconclusive 必备，append-only）
@@ -70,4 +71,4 @@ changelog:
 - **判定标准**：PASS = 导出对象含 flag/关键文件；FAIL = 全加密（转 TLS keylog 导入或流统计）。
 - **裁决词**：待复跑
 - **来源**：tshark 官方手册（--export-objects）；CTF-wiki 流量分析
-- （可选）**升级**：`-z conv,tcp` 先看会话分布，大流量会话优先——别按包序硬读。
+- （可选）**升级**：`-z conv,tcp` 先看会话分布（属 [[tshark 流量分析]] 用法），大流量会话优先——别按包序硬读。

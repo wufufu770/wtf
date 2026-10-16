@@ -40,6 +40,11 @@ wtf/
 - 同步校验方法：对两仓库 `shared/` 目录做 `diff -r`，应零差异；
 - 上游合并方向：SKILL-DUO 源项目（如仍在维护）→ 本仓库与 wpt 仓库。
 
+## 版本记录
+
+- **v0.3（2026-10-16）**：初始发布（7c9e336，六题型 24 条）+ 题型扩容（c5c7dd1，新增 aiml / mobile / recon / encoding 四文件，共十题型 40 条五段式假设条目）。
+- **v0.4（2026-10-16）**：Cairn/CTF-Agent 前沿设计借鉴（源自《reArtex 启发系列二》调研 5 条落点）——① ctf/SKILL.md 新增 §5「单题工作区」（四件套：challenge.md / metadata.json / attachments / notes.md+artifacts，状态放文件树不放对话历史，边界：单题入口而非隐藏状态系统）；② shared/REFLIGHT.md §5 增熵控五问回流结构门槛 + INDEX 查重链；③ §1 增死锁条款（同一假设连续 FAIL ≥3 禁止原路复跑，强制转新假设或标 inconclusive），收尾回流段引用；④ 六份题型文件「升级」字段边化（`→ [[条目名]]` 图边引用，当前图 9 边 / 60 节点）；⑤ tests/reflight-static-check.py 增第 4 检（图边引用存在性）。shared/ 与 tests/ 与 wpt 仓库及 SKILL-DUO 源字节同源（`diff -r` 零差异）；16 个知识文件静态校验 0 违例；ctf/SKILL.md 76 行（≤150）、frontmatter 仅 name/description、纯 markdown 相对路径——硬约束不回退。
+
 ## 许可证
 
 License 占位（待定）：TBD。正式发布前需确定（候选：MIT / Apache-2.0 / CC-BY-4.0）。
