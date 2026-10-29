@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "CTF-wiki（pwn 章节）、0rangec3t/Black-cat 五段式范式、M2 实测复跑（2026-10-15）"
 changelog:
+  - "[2026-10-29] v0.5：蒸馏 P1+P2 批次并入 15 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜源：ctf-corpus/distill 候选池（candidates.jsonl）+ distill/pilot/01-蒸馏批次报告-P2-20261029.md"
   - "[2026-10-15] 初始空壳，等待首个回流条目"
   - "[2026-10-15] v0.2：条目模板升级为五段式假设条目 + 机器可校验裁决词（REFLIGHT 回流协议，见 ../../shared/REFLIGHT.md）"
   - "[2026-10-15] v0.3：M2 填充 4 条（verified 1 / inconclusive 1 / hypothesis 2）"
@@ -30,6 +31,21 @@ changelog:
 2. [栈溢出偏移定位（cyclic 模式）](#栈溢出偏移定位cyclic-模式)（hypothesis）
 3. [ret2libc 两段式利用](#ret2libc-两段式利用)（hypothesis）
 4. [内核 pwn（qemu + rootfs）](#内核-pwnqemu--rootfs)（inconclusive）
+5. [自定义浮点 stack guard 固定常量回填 + ret2stack shellcode](#自定义浮点-stack-guard-固定常量回填-ret2stack-shellcode)（hypothesis）
+6. [「勿信补丁」修复覆盖面验证纪律](#勿信补丁修复覆盖面验证纪律)（hypothesis）
+7. [泄露旧源码 ≠ 现役二进制](#泄露旧源码-现役二进制)（hypothesis）
+8. [栈溢出活跃元数据零填充与循环计数收敛](#栈溢出活跃元数据零填充与循环计数收敛)（hypothesis）
+9. [rand() 未播种的服务端门禁（SSL 回显可预测）](#rand-未播种的服务端门禁ssl-回显可预测)（hypothesis）
+10. [只读文件系统的 nc 代理流式投递](#只读文件系统的-nc-代理流式投递)（hypothesis）
+11. [unlink 利用（P→P-0x18 自写指针 + GOT 覆写）](#unlink-利用pp-0x18-自写指针-got-覆写)（hypothesis）
+12. [glibc rand() 状态恢复（z3 约束求解 31 状态字）](#glibc-rand-状态恢复z3-约束求解-31-状态字)（hypothesis）
+13. [PIE 部分覆盖（页内低位改写跳转 + 固定地址跳板）](#pie-部分覆盖页内低位改写跳转-固定地址跳板)（hypothesis）
+14. [VM 寄存器索引截断越界（16-bit 无符号折返 + seccomp 打父进程）](#vm-寄存器索引截断越界16-bit-无符号折返-seccomp-打父进程)（hypothesis）
+15. [自研分配器 1 字节 footer 覆盖（块链伪造 + GOT 覆写）](#自研分配器-1-字节-footer-覆盖块链伪造-got-覆写)（hypothesis）
+16. [整数溢出尺寸 + realloc 一致性检查逃逸（失败样本）](#整数溢出尺寸-realloc-一致性检查逃逸失败样本)（hypothesis）
+17. [栈溢出 GOT 改写 + 全局字符串作参（Unix socket 报送）](#栈溢出-got-改写-全局字符串作参unix-socket-报送)（hypothesis）
+18. [\0 截断对抗 ROP（pop4ret 跳板 + dynELF 补 libc）](#0-截断对抗-roppop4ret-跳板-dynelf-补-libc)（hypothesis）
+19. [相邻变量覆写改认证标志（authenticated 旁路）](#相邻变量覆写改认证标志authenticated-旁路)（hypothesis）
 
 ### 格式化字符串 %p 泄露栈数据
 - **假设**：程序把用户输入直接作为 printf 第一参数（`printf(user_input)`）→ 输入 `%p %p %p...` 可逐个泄露栈上数据（返回地址/canary/栈指针），第 6 个 `%p` 起越过 printf 自身寄存器参数进入调用者栈帧。
@@ -78,3 +94,138 @@ changelog:
 | # | 日期 | 环境/靶场 | 命令或脚本 | 裁决词 | 工件路径 | 备注 |
 |---|---|---|---|---|---|---|
 | 1 | 2026-10-15 | 无内核环境（本机缺 qemu/gdb） | 未执行 | INCONCLUSIVE | - | 缺口：qemu-system-x86_64 + gdb + bzImage/rootfs 样本 |
+
+### 自定义浮点 stack guard 固定常量回填 + ret2stack shellcode
+- **分层**：简单档·可复现强
+- **假设**：checksec 报「No canary found」但程序自造 stack guard（以浮点数存储）⇒ guard 是二进制内**固定常量**而非每次随机 → 溢出时按原字节回填即绕过；NX disabled + 程序主动打印缓冲区地址 ⇒ shellcode 落栈、ret 指向 buf 的直接 ret2stack。
+- **验证步骤**：1) `checksec`（确认 NX/PIE/canary 三项）；2) IDA 定位自造 guard 的 8 字节浮点常量（如 0x405015 5547 5a31 a5 系，按小端记录）；3) payload = shellcode.ljust(buf_size,'a') + guard 原字节 + padding + buf_addr 小端；4) nc 交互后 `cat flag`。
+- **判定标准**：PASS = 回填 guard 后程序正常走到 ret 并执行 shellcode；FAIL = guard 每次随机（真 canary 语义）→ 转泄漏型（格式化字符串等）。
+- **裁决词**：待复跑
+- **来源**：CSAW 2015 precision（pwn 100p，272 solves）｜p4｜raw/github-repos/p4/2015_csaw_e_precision.md（完整 socket exploit 与 guard 字节 'a5315a4755155040' 在 WP；checksec 输出随附）
+- **陷阱备注**：「自造 canary」≠ canary——先看常量是否运行期固定，固定则只是回填题。
+
+### 「勿信补丁」修复覆盖面验证纪律
+- **分层**：超级难档·失败样本/陷阱
+- **回流优先级：refuted 候选**——「厂商修复 commit/公告 = 漏洞已消除」假设被 WP 证伪：Valve 第一版 fix 只修了第一处 `Get()` 调用、被报告的第二处（真正的报告点）未覆盖；待复跑转正。
+- **假设**：已修复版本上仍可能利用——修复常只覆盖公告引用的调用点之一；以**二进制 diff 验证每个危险触点**（fix 前后两版函数对比 + 交叉引用列出全部同类调用）为准，不信 commit message 与新闻口径。
+- **验证步骤**：1) 取 fix 前后两版二进制；2) 定位补丁函数（bindiff/符号差）；3) xref 列出全部同类危险调用（如全部 `Get(buf, len)` 点）；4) 逐点验证未覆盖处可否仍触发。
+- **判定标准**：PASS = 找到至少一个未修复调用点并稳定触发；FAIL = 全部触点已覆盖（真修完 → 转新漏洞挖掘）。
+- **裁决词**：待复跑
+- **来源**：Real World CTF 2018 Quals P90 Rush B｜perfect blue（未在赛内解出，赛后两天完成利用）｜raw/github-repos/perfectblue/2018_realworldctf_x_p90-rush-b.md（结论段 "never trust a fix. Always verify it actually fixes the bug!"）
+
+### 泄露旧源码 ≠ 现役二进制
+- **分层**：超级难档·失败样本/陷阱
+- **回流优先级：refuted 候选**——「公开泄露的旧源码（2007 年 CS:GO leak）可直接定位现役漏洞点」假设被 WP 证伪：补丁只落二进制、源码与线上脱节，队耗时主要损耗于此；待复跑转正。
+- **假设**：利用现役二进制时以逆向为准、泄露源码只作命名/结构参考：先对关键函数做「源码 vs 反编译」diff，**差异处（补丁痕迹）优先审计**——补丁修复常不完整，正好引出相邻未修点。
+- **验证步骤**：1) 逆目标函数；2) 与泄露源码同名函数 diff；3) 差异处判修复语义；4) 沿差异点找同类未修调用。
+- **判定标准**：PASS = 在源码-二进制差异处找到可达漏洞；FAIL = 源码与二进制完全对齐（可直接读源码省时）。
+- **裁决词**：待复跑
+- **来源**：同上 P90 Rush B（"We could have saved a lot of time by just opening the binary up in IDA"——比赛环境没带 IDA 转而信泄露源码是直接损失原因）
+
+### 栈溢出活跃元数据零填充与循环计数收敛
+- **分层**：超级难档·失败样本/陷阱
+- **假设**：溢出会覆盖**仍在使用**的栈上元数据（结构体字段/文件长度/循环计数）时，0x41 填充破坏运行语义导致先崩在劫持点之前 → 改**零填充**（NULL 引用解引用少、循环边界归零）；循环以「文件数」计数的（`nCentralDirectoryEntries_Total`），把计数收敛到 2、在第 2 次迭代触发溢出后立刻满足退出条件 → 溢出即函数尾部即控制流劫持点。
+- **验证步骤**：1) 引用追踪定位溢出后仍被读取的栈槽；2) payload 对应区段置 0 / 还原原值；3) 循环计数字段调至最小迭代数；4) 前置检查（如 fileLen 上限）用尾部零填充绕过；5) ret 前保留必要指针，ROP 接管。
+- **判定标准**：PASS = 程序语义保持稳定到达 EIP 控制点；FAIL = 崩溃在劫持前 → 回读崩溃点栈槽继续修正（迭代收敛）。
+- **裁决词**：待复跑
+- **来源**：P90 Rush B（"a lot of metadata on the stack that is still being used"→零填充；"nCentralDirectoryEntries_Total holds the number of files"→ 置 2 即溢出+退出循环）
+- **陷阱备注**：0x41414141 填充是默认习惯，活跃元数据场景它是崩溃源——先问「这块栈后面还被谁读」。
+
+### rand() 未播种的服务端门禁（SSL 回显可预测）
+- **分层**：超级难档·失败样本/陷阱
+- **回流优先级：refuted 候选**——「SSL 服务须攻击 TLS 层（MITM/密钥恢复）」假设被 WP 拆穿：handler 门禁 = `rand()` 未播种的回显匹配，连上回填即过；待复跑转正。
+- **假设**：SSL 门禁题先审 handler 业务逻辑再碰密码学层：Ghidra 反编译 `main/init/handler`，识别 `rand()`/`time()` 类未播种熵源 → 门禁可预测（连接即回显"随机"数，原样回填即得旗）。
+- **验证步骤**：1) 反编译定位 handler 主体；2) 查 `rand()` 调用前有无 `srand(time(NULL))`（WP 反编译注释 "this value is NOT seeded!"）；3) 连接读回显 → atoi 后回填 → 收旗。
+- **判定标准**：PASS = 回显匹配即得旗；FAIL = rand 已播种 → 转攻 SSL 实现/协议层。
+- **裁决词**：待复跑
+- **来源**：Dragon CTF 2020 babyshell（242p，38 solved）｜p4｜raw/github-repos/p4/2020_dragonctf_x_babyshell.md（非预期解：作者预期 shellcode 题，解者走 SSL 门禁）
+
+### 只读文件系统的 nc 代理流式投递
+- **分层**：超级难档·失败样本/陷阱（环境纠错链样本）
+- **假设**：靶机 rootfs 只读（`mount -o remount,ro /`）+ 工具贫瘠（无 openssl、nc 无 PATH symlink 但 `/bin/busybox nc` 可用）时，本地工具栈经 **nc 管道代理**进靶机：服务端起 `(while true; do base64 -d; done) | /bin/busybox nc 127.0.0.1 4433`，本地 pwntools 双 socket 对接转发。
+- **验证步骤**：1) `stty -echo` 关回显（否则回显污染流）；2) base64 分块流式传（规避 nc stdin 关闭时机问题）；3) 特殊字节损坏（如 `\x10` 变 `\x16`）用 `| xxd -c1` 修正；4) 本地端同步解 base64 写目标 socket。
+- **判定标准**：PASS = 代理完成完整 TLS 会话并收旗；FAIL = 字节流损坏 → 三查（回显污染 → -echo；stdin 提前关闭 → while-read 循环；坏字节 → 换 \xNN 转义）。
+- **裁决词**：待复跑
+- **来源**：babyshell "Part 2: The struggle"（problems #1/#2/#3 逐条纠错记录——p4 明言 "skipping here loooong hours spent on debugging"）——**典型多步失败-修正链，失败样本密度最高的正文段之一**
+
+### unlink 利用（P→P-0x18 自写指针 + GOT 覆写）
+- **分层**：困难档·经典原语
+- **假设**：存在可控堆指针数组（全局 `box[i]` 指向堆块）且可溢出伪造 chunk 头 → 造 `FD=P-0x18、BK=P-0x10`（P 为指针数组自身地址）→ 触发 free 合并时 unlink 检查 `FD->BK==P && BK->FD==P` 自洽 → unlink 后 `P` 处指针被改写为 `P-0x18` → 经该指针二次写入达成对指针数组/GOT 的任意写（atoi→system + 传 `/bin/sh`）。
+- **验证步骤**：1) 定位指向堆的全局指针 P；2) 溢出写假 chunk（prev_size/size=F 地/”fd=P-0x18, bk=P-0x10"）；3) 触发向后合并（改下一块 prev_inuse=0）；4) unlink 自洽校验过 → `box[i]` 读回；5) 二级写覆盖 GOT。
+- **判定标准**：PASS = unlink 自洽通过且 GOT 覆写后拿到 shell；FAIL = libc 2.26+（safe-unlinking 检查差异）→ 转 [[栈溢出偏移定位（cyclic 模式）]] 之外的 off-by-null / tcache 路线。
+- **裁决词**：待复跑
+- **来源**：kxctf 2017 Puzzle 4（pwn）｜六星战队（sixstars）｜raw/github-repos/sixstars/2017_kxctf_h_4.md（完整 exp 与 unlink 布局在 WP；本地同版 libc 可重放）
+- **陷阱备注**：题设 PIE——需先经随机数预测（见下条）拿 .bss 段堆指针地址，unlink 的 P 才能算出。
+
+### glibc rand() 状态恢复（z3 约束求解 31 状态字）
+- **分层**：困难档·状态恢复
+- **假设**：服务端用 `glibc rand()`（无播种偏差）且「猜错给出当前随机数」回显 → r[i] = Σ state[j]·输出（31 个 32 位状态字、等价线性递推）→ 采 ≥93 个连续输出建 z3 线性约束 → 解出全部状态并预测下一输出（以及 seed 地址类派生泄露）。
+- **验证步骤**：1) 采集错误回显序列（≥93）；2) 按 glibc TYPE_3 递推建立 SMT 约束；3) solver 解状态；4) 预测下一次输出对拍；5) 用预测换 seed/.bss 地址。
+- **判定标准**：PASS = 预测值与实际逐次一致并换得地址泄露；FAIL = 输出不足 93 → 继续采集；版本差异（musl/旧版 libc）→ 重推递推式。
+- **裁决词**：待复跑
+- **来源**：kxctf 2017 Puzzle 4（pwn）｜六星战队（sixstars）｜raw/github-repos/sixstars/2017_kxctf_h_4.md（z3 脚本骨架在 WP；本地 C 程序可完整复现）
+- **关联**：知识锚 = 上条 unlink（同一题双阶段）；与 [[格式化字符串 %p 泄露栈数据]] 同属「先泄露再利用」族——区别在泄露源是伪随机输出流。
+
+### PIE 部分覆盖（页内低位改写跳转 + 固定地址跳板）
+- **分层**：困难档·概率利用
+- **假设**：溢出长度被截断到恰好能改返回地址低 2 字节（无完整地址泄露时）→ 页对齐使高 12 位不变 → 覆盖后落点在 ±1 页内：①目标函数与被覆盖返回点同段近邻 → 直接低 2 字节跳目标（成功率 1/1，若同 64 KiB 窗口则 1/16）；②需稳定 gadget 落点 → 跳 `0xffffffffff600000`（vsyscall 入口，内核映射固定且可执行）作 ret 跳板。
+- **验证步骤**：1) 测溢出可用字节数（返回地址偏移后余量）；2) 计算目标/落点同页差；3) 覆写低 2 字节（小端）；4) 多次运行统计命中率；5) vsyscall 入口选 `0xffffffffff600000`（入口而非 +9 的指令中段）。
+- **判定标准**：PASS = 概率命中拿到 shell/旗；FAIL = 窗口不含目标 → 需先泄露（%p/puts）再全量覆写；vsyscall 被模拟层禁止（`vsyscall=none`）→ 转其他固定映射。
+- **裁决词**：待复跑
+- **来源**：hack.lu 2015 hackme｜sixstars 仓库（wp2 行）｜raw/github-repos/sixstars/2015_hacklu_h_hackme.md（源码+概率分析在 WP；本地同参数 gcc 可复现）；姊妹证据：SunshineCTF 2019 Return_To_Mania（welcome 地址 printf 泄露 + 低 2 字节跳 mania，同页内差 0x90）｜Dvd848（S1 扩容源）
+- **陷阱备注**：部分覆盖本质是用「放弃高位」换「免泄露」——两案例分别走 1/16 概率与固定跳板两条补偿路径。
+
+### VM 寄存器索引截断越界（16-bit 无符号折返 + seccomp 打父进程）
+- **分层**：困难档·复合链
+- **假设**：自研 VM 的栈/内存以「寄存器值作索引」且寄存器宽 16 bit → 索引按 half-word 计可达 VM 栈外（0x68/2、0xa8/2 等偏移）→ 越界读泄露 PIE/libc、越界写改 main 返回地址；子进程 seccomp=STRICT（仅 exit/sigreturn/read/write）拿不了 shell → 攻击面转父进程：父进程从共享内存按「前 2 字节尺寸」memcpy → 控制尺寸/内容使父进程溢出（ROP 链无限长）。
+- **验证步骤**：1) 定位 VM 栈基址与寄存器宽；2) readstack/write 越界偏移试算（泄露 PIE@0x68、libc@0xa8）；3) 改子进程返回走 sigreturn ROP；4) 构造共享内存 2 字节尺寸 + ROP 内容；5) 父进程 memcpy 触发。
+- **判定标准**：PASS = 父进程接管 shell；FAIL = 尺寸边界被截断（0x40 一类对齐检查）→ 换 0x90 等非 2 次幂尺寸（WP 实测卡点）。
+- **裁决词**：待复跑
+- **来源**：MidnightSun CTF 2019 Quals hfs-vm2（pwn 660p，14 solved）｜perfect blue（战队）｜raw/github-repos/perfect-blue/*.md（VM 指令语义与两段 exp 在 WP；需自建父子进程同构）
+- **陷阱备注**：WP 记录卡点——memcpy 尺寸 0x40 反复失败、0x90 成功：非对齐尺寸的边界行为要用实测而不是猜（典型「环境细节反直觉」失败样本）。
+
+### 自研分配器 1 字节 footer 覆盖（块链伪造 + GOT 覆写）
+- **分层**：困难档·结构对抗
+- **假设**：自研内存管理器块头/尾各 8 字节（`size|used` 位）且分配存在 1 字节越界（覆盖本块 footer 低字节）→ 反向遍历（coalesce）用 footer 算前块指针 → 篡 footer 低字节 = 伪造前块大小 → 合并时指针错位产出「前后重叠块」→ 双指针引用同一数据 → 覆写 Wisdom 对象函数指针/GOT（strcmp→system + /bin/sh）。
+- **验证步骤**：1) 读 mm.c 确认 header/footer 语义与双向遍历点；2) 构造 1 字节覆盖值（size 低位+used bit）；3) 触发 free 使 coalesce 吃到伪造 footer；4) 用重叠块写函数指针；5) 调 strcmp('...')→system('/bin/sh')。
+- **判定标准**：PASS = 拿 shell；FAIL = footer 校验（size 一致性/对齐）拦下 → 转正向遍历面的溢出。
+- **裁决词**：待复跑
+- **来源**：TUCTF 2017 Temple（pwn 500p，49 solved）｜cartoon-raccoon｜raw/github-repos/*/2017_tuctf_h_temple-500.md（mm.c 与利用序列在 WP；本地可全重放）
+
+### 整数溢出尺寸 + realloc 一致性检查逃逸（失败样本）
+- **分层**：困难档·失败样本/陷阱（**refuted 优先回流**）
+- **假设**：32 位下 `65535×65536` 乘法溢出使请求尺寸回绕 → 覆盖堆内容可控（假 chunk + 指针改写）；但 realloc 路径上 libc 检查「当前 chunk 尺寸合法性」与「分配状态一致性」→ 传统 unlink/假 chunk 路径被卡（WP 作者卡死未出，赛后复盘 flappy pig 队走「realloc 失败返回大地址写」绕开全部检查）。
+- **验证步骤**：1) 复现整数溢出改写点；2) 假 chunk + unlink 尝试并记录被拦检查清单；3) 复测「realloc 失败→返回极小地址/大地址」路径的可用写原语；4) GOT 改写收尾。
+- **判定标准**：PASS = 复现「unlink 被检查拦截」与「失败路径成写原语」双记录；FAIL = 环境 libc 无该检查差异 → 记录版本对照。
+- **裁决词**：待复跑
+- **来源**：ISG 2015 dict（pwn）｜六星战队（sixstars）｜raw/github-repos/sixstars/2015_isg_e_dict.md（含完整失败路径与赛后他人解法对照；卡点段为高价值失败样本）
+- **陷阱备注**：本条知识主体是「检查清单」——malloc/realloc 的 size/used 一致性检查在堆已乱时几乎必然触发，别硬冲 unlink；先枚举「失败返回值能否当写原语用」。
+
+### 栈溢出 GOT 改写 + 全局字符串作参（Unix socket 报送）
+- **分层**：困难档·经典原语
+- **假设**：Unix domain socket 服务读入定长字段可溢出而二进制无 libc 可泄 ⇒ 覆写 `system@GOT`（atoi/system 族改写点）并以程序内已有全局字符串（`/bin/sh` 同型）作参数——ret 布局为 [padding(含 '\xff'×20 保前 16 字节无 \0)][system@GOT][nops][binsh_addr]，经 socket 发 payload length + payload 两段协议投递，起 shell 后回连取 /tmp/shopkey。
+- **验证步骤**：1) 定 LEN_TO_RET 与 GOT 地址；2) 构造不含前置 \0 的填充（\xff 兜底）；3) l32 序列化地址；4) socket 发 l32(len)+payload；5) nc -l 收文件。
+- **判定标准**：PASS = 回连收到旗文件；FAIL = ASLR/PIE → 转部分覆写或泄漏原语。
+- **裁决词**：待复跑
+- **来源**：GeekGame 360 信息安全大赛 2015 80（pwn）｜六星战队（中国）｜raw/github-repos/sixstars/2015_geekgame-360_h_writeup.md（完整 exp 与本地复现条件在 WP；本地 32 位环境可重放）
+- **关联**：与 [[栈溢出偏移定位（cyclic 模式）]] 的进阶位——定位后本题增量在「无 libc 场景用现成 GOT 目标 + 全局字符串」与「Unix socket 双段协议」投递。
+- **陷阱备注**：Q1 归位说明——按栈溢出实类归 pwn（选材线记 misc 合集归类）。
+
+### \0 截断对抗 ROP（pop4ret 跳板 + dynELF 补 libc）
+- **分层**：困难档·经典原语
+- **假设**：64 位 read→copy 溢出但 copy 遇 `\0` 截断而 ROP 链地址必含 \0 ⇒ 用无 \0 的前 16 字节覆盖到返回地址改写为 pop4ret（一次 pop 四个寄存器跳过不可控区），把真正的链放在「截断点之后已被读入的缓冲」里；无 libc ⇒ dynELF 以泄漏函数逐页扫 ELF 头建 mini-got，再回填 system。
+- **验证步骤**：1) cyclic 定偏移；2) 前 16B 纯可打印覆盖 + pop4ret 地址（无 \0 的程序内 gadget）；3) 截断点后放置完整 ROP；4) dynELF 泄漏/写回两段式。
+- **判定标准**：PASS = 链执行拿到 shell；FAIL = gadget 含 \0 → 换地址半字节对齐的 pop 变体。
+- **裁决词**：待复跑
+- **来源**：RCTF 2015 welpwn（PWN 200）｜六星战队（中国）｜raw/github-repos/sixstars/2015_rctf_h_writeup.md（思路要点在 WP；现代环境建议 ret2csu 化重放）
+- **关联**：[[ret2libc 两段式利用]] 的无 libc 前置版——dynELF 是「泄漏→建表→回填」三段式的时间换空间。
+- **陷阱备注**：Q1 归位说明——按栈溢出实类归 pwn（选材线记 ai/RCTF 合集归类）。
+
+### 相邻变量覆写改认证标志（authenticated 旁路）
+- **分层**：困难档·单点
+- **假设**：`username[USERNAME_LEN]` 却按 `read(PASSWORD_LEN)` 读入（长度错配溢出）而 PIE/Full RELRO 封死地址型利用 ⇒ 目标转为栈上紧邻的 `authenticated` 标志变量——溢出量精确覆盖其低位非零 → print_flag 路径放行。
+- **验证步骤**：1) checksec 确认防护矩阵；2) 反汇编量 username 与 authenticated 相对偏移；3) read 定长填充至该偏移并写非零；4) 触发登录流程收旗。
+- **判定标准**：PASS = 认证旁路出旗；FAIL = 变量间有 canary/粘合 → 换栈上其他控制标志。
+- **裁决词**：待复跑
+- **来源**：Technion Ducky Debug Duck 2021 Flag_Server（pwn 100p）｜Dvd848（S1 扩容源）｜raw/github-repos/Dvd848/2021_flag-server-md_h_flag-server.md（偏移与 payload 在 WP；本地同构秒级重放）
+- **关联**：与 [[栈溢出活跃元数据零填充与循环计数收敛]] 互补——该条讲「为何会漏填」，本条讲「高防护下最优目标从地址退化为数据标志」。

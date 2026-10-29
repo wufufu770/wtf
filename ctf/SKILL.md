@@ -1,6 +1,6 @@
 ---
 name: ctf
-description: Solve CTF competition challenges and flag-based security puzzles across web, pwn, reverse, crypto, forensics, misc, AI security (LLM/prompt injection), mobile, OSINT/recon/encoding categories. Use when the user mentions CTF, capture the flag, a challenge, a flag format (flag{...}, CTF{...}), lab platforms like HackTheBox/HTB, TryHackMe/THM, BUUCTF, crackmes, or hands-on puzzle solving with provided binaries (ELF/APK), pcaps, ciphertexts (RSA/AES), stego images, LLM chatbot challenges, or a web instance; also when the user says 做题, 赛题, 解题, 打靶 with a security context. Make sure to use this skill whenever a challenge file or flag format is present, even if the user just says "help me solve this". Do NOT use for authorized real-world penetration testing (use the pentest skill instead), for vulnerability news or CVE analysis without a challenge, for general reverse-engineering with no flag involved, for math competitions or escape-room riddles with no security context, or for writing crawlers and dev tooling.
+description: Solve CTF competition challenges and flag-based security puzzles across web, pwn, reverse, crypto, forensics, aiml, mobile, recon, encoding, and misc categories. Use when the user mentions CTF, capture the flag, a challenge, a flag format (flag{...}, CTF{...}), lab platforms like HackTheBox/HTB, TryHackMe/THM, BUUCTF, crackmes, or hands-on puzzle solving with provided binaries (ELF/APK), pcaps, ciphertexts (RSA/AES), stego images, or a web instance; also when the user says 做题, 赛题, 解题, 打靶 with a security context. Make sure to use this skill whenever a challenge file or flag format is present, even if the user just says "help me solve this". Do NOT use for authorized real-world penetration testing (use the pentest skill instead), for vulnerability news or CVE analysis without a challenge, for general reverse-engineering with no flag involved, for math competitions or escape-room riddles with no security context, or for writing crawlers and dev tooling.
 ---
 
 # CTF Skill（夺旗赛解题）
@@ -8,7 +8,7 @@ description: Solve CTF competition challenges and flag-based security puzzles ac
 ## 1. 定位与边界
 
 - 本 skill 是 **CTF 解题的知识底座与题型路由器**：正文只做题型分流与纪律，具体技术外置到 references/，按需加载。
-- 知识分层：本文件（常驻索引）→ `references/category-*.md`（题型深化）→ `../shared/tools/`（双 skill 共用工具用法，去重层，只引用不复制）→ `../shared/REFLIGHT.md`（双 skill 共用回流协议）。
+- 知识分层：本文件（常驻索引）→ `references/category-*.md`（题型深化，v0.5 十库）→ `references/strategy-<域>.md`（策略页：这类题怎么想，v0.5 蒸馏策略镜像）→ `../shared/tools/`（双 skill 共用工具用法，去重层，只引用不复制）→ `../shared/REFLIGHT.md`（双 skill 共用回流协议）。
 - 与 pentest skill 的分工：**有 flag/赛题/一次性靶场环境**走本 skill；**有授权边界与真实资产**走 pentest skill。CTF 环境默认授权充分，无需走 scope 门槛，但同样禁止把赛题手法用于未授权真实目标。
 
 ## 2. 题型路由表（先分流，再加载）
@@ -18,19 +18,21 @@ description: Solve CTF competition challenges and flag-based security puzzles ac
 | Web | `references/category-web.md` | 网址实例、SQL 注入、XSS、SSRF、反序列化、JWT、PHP/Java 特性 |
 | Pwn | `references/category-pwn.md` | ELF 附件、栈溢出、堆利用、ROP、格式化字符串、kernel 题 |
 | Crypto | `references/category-crypto.md` | 密文串、RSA/AES/椭圆曲线参数、编码套娃、随机数弱点 |
-| Reverse | `references/category-reverse.md` | 二进制/APK 校验逻辑、反编译、混淆、自修改代码 |
-| Forensics | `references/category-forensics.md` | pcap 流量包、图片隐写、内存镜像、磁盘恢复、日志分析（隐写分析主库） |
-| AI 安全 | `references/category-aiml.md` | LLM chatbot、prompt 泄露/注入、越狱、模型文件附件（.gguf/.pkl） |
-| Mobile | `references/category-mobile.md` | APK/IPA 附件、adb/frida、证书锁定、root 检测绕过 |
-| 信息搜集 | `references/category-recon.md` | 只给域名/用户名/照片、OSINT、泄露数据、数据安全甄别 |
-| 编码分析 | `references/category-encoding.md` | 乱码串、非常规编码、零宽字符、无密钥解码 |
-| Misc | `references/category-misc.md` | 杂项：PPC 编程题、区块链、编码迷宫（OSINT/编码已拆出） |
+| Reverse | `references/category-reverse.md` | 二进制校验逻辑、反编译、混淆、自修改代码 |
+| Forensics | `references/category-forensics.md` | pcap 流量包、图片隐写、内存镜像、磁盘恢复、日志分析 |
+| AI 安全 | `references/category-aiml.md` | 模型文件（.pt/.pkl）、推理框架载入、prompt 注入、模型反序列化 |
+| 移动安全 | `references/category-mobile.md` | APK 逆向、移动取证镜像、客户端校验、移动端协议 |
+| 信息搜集 | `references/category-recon.md` | OSINT 画像、地理定位、公开数据交叉、泄露数据甄别 |
+| 编码分析 | `references/category-encoding.md` | 自定义字母表、非标准编码、esoteric 语言、多层套娃 |
+| Misc | `references/category-misc.md` | 杂项：PPC 编程题、区块链、物理/脑洞题（OSINT/编码/AI 已拆独立库） |
+| 策略层 | `references/strategy-<域>.md` | 「这类题怎么想」跨题规律：正门封死转移目标、多源交叉收敛、防护声称≠实现等（按域路由 cross/pwn/crypto/forensics/recon/web） |
 
 分流规则：
 
 - 先按附件与题面关键词定主题型，只加载对应一个 category 文件；判定拿不准时看附件（二进制→pwn/reverse，数据文件→forensics/crypto）。
 - 题目跨类（如 web+crypto 组合）允许追加加载第二个 category 文件，最多两个，不要全量读入。
 - 需要工具具体语法时查 `../shared/tools/`（索引见 `../shared/tools/INDEX.md`），工具知识一律不在题型文件里重复。
+- **策略跳转（v0.5）**：首跳受挫（正门防护/多源线索/工具报告与实测矛盾）时加载 `references/strategy-<域>.md` 对应档位区执行行动序列；策略命中/失效须回写应用记录（PASS ≥1 推 verified、FAIL ≥2 推 refuted）。
 
 ## 3. 解题纪律
 

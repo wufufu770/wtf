@@ -4,7 +4,7 @@
 
 ## 用途
 
-为任何支持 SKILL.md 约定（Anthropic Agent Skills 规范 / agentskills.io 事实标准）的 Agent 提供一套 **CTF 解题**知识底座：十题型知识库（web / pwn / reverse / crypto / forensics / misc / AI 安全 / 移动安全 / 信息搜集·数据安全 / 编码分析，v0.3 已填充五段式假设条目 40 条）+ REFLIGHT 经验回流协议（含 7 条本机可复现实战闭环记录）。
+为任何支持 SKILL.md 约定（Anthropic Agent Skills 规范 / agentskills.io 事实标准）的 Agent 提供一套 **CTF 解题**知识底座：十题型知识库（web / pwn / reverse / crypto / forensics / misc / AI 安全 / 移动安全 / 信息搜集·数据安全 / 编码分析，v0.5 五段式假设条目 158 条）+ 六域策略页（「这类题怎么想」16 条 + 机读 strategy.jsonl）+ REFLIGHT 经验回流协议（含 7 条本机可复现实战闭环记录）。
 
 ## 目录结构
 
@@ -12,7 +12,7 @@
 wtf/
 ├── ctf/                      # skill 本体（加载单元）
 │   ├── SKILL.md              # 索引 + 触发 + 题型路由表 + 收尾回流
-│   └── references/           # 10 份：category-web / pwn / reverse / crypto / forensics / misc / aiml / mobile / recon / encoding
+│   └── references/           # 17 份：category-* 10 份（十题型）+ strategy-{cross,pwn,crypto,forensics,recon,web}.md 六域策略页 + strategy.jsonl（机读）
 ├── shared/                   # 双 skill 共用层（本仓库为自包含副本，见下方同步义务）
 │   ├── REFLIGHT.md           # 回流协议：五态状态机 + 裁决词 + 复跑记录
 │   └── tools/                # 工具用法唯一真相源（6 份 + INDEX 路由表）
@@ -44,6 +44,7 @@ wtf/
 
 - **v0.3（2026-10-16）**：初始发布（7c9e336，六题型 24 条）+ 题型扩容（c5c7dd1，新增 aiml / mobile / recon / encoding 四文件，共十题型 40 条五段式假设条目）。
 - **v0.4（2026-10-16）**：Cairn/CTF-Agent 前沿设计借鉴（源自《reArtex 启发系列二》调研 5 条落点）——① ctf/SKILL.md 新增 §5「单题工作区」（四件套：challenge.md / metadata.json / attachments / notes.md+artifacts，状态放文件树不放对话历史，边界：单题入口而非隐藏状态系统）；② shared/REFLIGHT.md §5 增熵控五问回流结构门槛 + INDEX 查重链；③ §1 增死锁条款（同一假设连续 FAIL ≥3 禁止原路复跑，强制转新假设或标 inconclusive），收尾回流段引用；④ 六份题型文件「升级」字段边化（`→ [[条目名]]` 图边引用，当前图 9 边 / 60 节点）；⑤ tests/reflight-static-check.py 增第 4 检（图边引用存在性）。shared/ 与 tests/ 与 wpt 仓库及 SKILL-DUO 源字节同源（`diff -r` 零差异）；16 个知识文件静态校验 0 违例；ctf/SKILL.md 76 行（≤150）、frontmatter 仅 name/description、纯 markdown 相对路径——硬约束不回退。
+- **v0.5（2026-10-29）**：蒸馏批次入库（P1+P2）——① 知识库十库扩容：并入 ctf-corpus 蒸馏层 P1 试点 30 + P2 中段困难档 104 = 134 条五段式条目（全部 hypothesis/待复跑，REFLIGHT §1 二手知识纪律），累计 158 条（web 27 / crypto 33 / forensics 26 / reverse 20 / pwn 19 / mobile 7 / recon 7 / misc 10 / encoding 5 / aiml 4）；② 策略层首建：`references/strategy-{cross,pwn,crypto,forensics,recon,web}.md` 六域策略页 16 条（cross 7 / pwn 4 / crypto 2 / forensics 1 / recon 1 / web 1）+ 机读 `strategy.jsonl`（镜像自 ctf-corpus 策略库，源库六检 6/6，状态 hypothesis 5 / verifying 11）；③ SKILL.md v0.5：题型路由表 6→10 行 + 策略层行 + 策略跳转规则（首跳受挫加载对应策略档位，命中/失效回写应用记录），78 行（≤150 硬约束不回退）；④ tests/reflight-static-check.py 四检全绿（状态词/裁决词/复跑表/图边引用，退出码 0）。
 
 ## 许可证
 

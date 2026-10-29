@@ -1,78 +1,69 @@
 ---
-verified: "未复跑（2026-10-16 新建，全部条目 hypothesis，等待首个回流）"
 status: hypothesis
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
-source: "M2 实测复跑（2026-10-15 编码套娃）、CTF-wiki（编码）、CyberChef 使用范式"
+source: "ctf-corpus 蒸馏层 P1+P2 批次（distill/by-category/encoding），原始 WP 见 ctf-corpus/raw/ 与 meta/register.jsonl"
 changelog:
-  - "[2026-10-16] v0.3 新建：编码分析题型 4 条（verified 1 / hypothesis 3），从 misc/crypto 拆出编码主库"
+  - "[2026-10-29] v0.5 新库：蒸馏 P1+P2 批次建库并入 5 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜11→10 库映射见 ctf-wp 采集规划 §4.4"
 ---
 
-# 题型：编码分析（Encoding Analysis）
+# 题型：编码分析
 
-> 读取时机：题面给一串"乱码"、神秘字符串、一堆数字/符号，无密钥特征（区别于 crypto：**编码无密钥、加密有密钥**）。与 misc 分工：编码套娃主判据沉淀在本文件。
+> 读取时机：非标准编码/自定义字母表、多层编码套娃、esoteric 语言类题面（本条目主库）
 
 ## 填充规范（回流时遵守）
 
 1. 条目模板 = 五段式假设条目：**假设 → 验证步骤 → 判定标准 → 裁决词 → 来源**（完整模板见 ../../shared/REFLIGHT.md §3），一技术一条目。
 2. 裁决词只允许机器可校验标准词 **PASS / FAIL / INCONCLUSIVE**（词表见 ../../shared/REFLIGHT.md §2）；状态机：hypothesis → verifying → verified / refuted / inconclusive（§1）。
-3. frontmatter 记录本文件最新验证状态；changelog 追加一行/次，不删除历史。
-4. **失败样本优先回流**：refuted 条目必须附 FAIL 复跑记录、失败原因与"下一步转哪个新假设"。
-5. verified/refuted/inconclusive 条目必须附复跑记录表（格式见 ../../shared/REFLIGHT.md §4）；未经复跑的条目状态只允许 hypothesis。
-6. 工具具体用法归 ../../shared/tools/ 对应文件（去重原则）。
-7. 本文件超过 100 行时，在本节下方补 TOC 目录。
+3. frontmatter 记录本文件最新验证状态；changelog 每次结构变更一行留痕（append-only）。
+4. 「升级」字段跳转目标用双中括号图边引用，必须命中全库某个 ### 级条目标题（第 4 检；字面示例只准放 frontmatter）。
+5. 未经复跑的条目状态只允许 hypothesis（REFLIGHT §1 二手知识纪律）。
 
 ## 条目区（TOC）
+1. [自定义字母表 base64（内存 dump 定位表）](#自定义字母表-base64内存-dump-定位表)（hypothesis）
+2. [游戏 glyph 密码破译（Noita 眼睛符文 + 维基对照）](#游戏-glyph-密码破译noita-眼睛符文-维基对照)（hypothesis）
+3. [16 字符字母表 Vigenère（b16 前置 + 逐位独立密钥爆破）](#16-字符字母表-vigenèreb16-前置-逐位独立密钥爆破)（hypothesis）
+4. [排版 Bacon 密码（斜体/正体交替 5bit）](#排版-bacon-密码斜体正体交替-5bit)（hypothesis）
+5. [自改写字节码 VM 谐振编程（三层变换 + 精确周期预算）](#自改写字节码-vm-谐振编程三层变换-精确周期预算)（hypothesis）
 
-1. [按字符集特征逐层识别编码链](#按字符集特征逐层识别编码链)（verified）
-2. [非常规编码家族：数字系与符号系](#非常规编码家族数字系与符号系)（hypothesis）
-3. [Unicode 隐形字符与零宽注入](#unicode-隐形字符与零宽注入)（hypothesis）
-4. [编码与加密的分界判定](#编码与加密的分界判定)（hypothesis）
-
-### 按字符集特征逐层识别编码链
-- **假设**：编码识别不靠猜，靠字节特征表：`+/=`→base64、`0-9A-F`偶长→hex、`\x1f\x8b`→gzip、`\x78\x9c`/`\x78\x01`→zlib、纯 01→二进制、`.- `三符→摩斯。逐层剥到明文。
-- **验证步骤**：
-  ```python
-  # 循环：查首字节特征 -> 选解码器 -> 解一层 -> 重复，直到 printable 占比 >90%
-  # 套娃上限经验：CTF 题一般 2~5 层；超过 5 层考虑第一层判断就错了
-  ```
-  M2 实测（2026-10-15，继承自 misc 条目1）：`b64(b64(gzip(flag)))` 三层样本按特征解链完整还原，复现路径 `b64decode ×2 → gzip.decompress`。
-- **判定标准**：还原出 flag/可读文本 → PASS；层数穷尽仍未明文 → FAIL 转 2 号非常规编码假设。
-- **裁决词**：待复跑（base64/gzip 链路实测；hex/zlib 特征同表待补充实测样本）
-- **来源**：M2 REFLIGHT 实战闭环（2026-10-15）、CTF-wiki 编码章节
-
-### 非常规编码家族：数字系与符号系
-- **假设**：字符集特征表命不中时，按"数字系/符号系/图形系"三家族排查：数字系（ook!、brainfuck 变体、坐标数对、book code 页行词）、符号系（JSFuck、符号Brainfuck、颜文字 AA）、图形系（二维码/条码/盲文/旗语）。
-- **验证步骤**：
-  ```bash
-  # 数字系：先看数字对数与分组（偶数组→坐标/书码页行）；OOK: .?.. 形态
-  # 符号系：全由 []+!() 组成 → JSFuck eval；zcoin 颜文字 → aaencode
-  # 图形系：file/QR 识别工具直接解码
-  ```
-- **判定标准**：对应家族解码出 flag → PASS；三家族全试无果 → FAIL 转 crypto 假设（可能是带密钥的加密）。
+### 自定义字母表 base64（内存 dump 定位表）
+- **分层**：困难档·单点
+- **假设**：明文流以非标准 64 字符表编码（`OPWvYny#Nopz0$HI…`）⇒ 在内存/静态数据区搜索与输出字符集吻合的 64 长度表 → 按表重建 index→6bit 映射 → 标准解码；常量特征串（0123-4567-89ab-cdef 循环）可先验定位目标区域。
+- **验证步骤**：1) 字符集频率分析确认 64 符号域；2) dump 中 grep 表串；3) 以表序重解码；4) 末位 padding 依 76 长度补等号。
+- **判定标准**：PASS = 解码得可读明文/旗；FAIL = 表为变序/含重复符 → 先去重校验再映射。
 - **裁决词**：待复跑
-- **来源**：CTF-wiki misc、CyberChef Magic 操作码表
-
-### Unicode 隐形字符与零宽注入
-- **假设**：文本"看起来什么都没有"或字符串长度与可见字符数不符 → 存在零宽字符（U+200B/200C/200D/FEFF）或 Unicode 混排隐写，按位组合还原二进制。
-- **验证步骤**：
-  ```python
-  s = open('msg.txt', encoding='utf-8').read()
-  hidden = [c for c in s if ord(c) in (0x200b,0x200c,0x200d,0xfeff,0x2060)]
-  # 每类零宽字符映射 0/1 → 拼二进制 → bytes
-  print(len(s), len(hidden))
-  ```
-- **判定标准**：隐形字符按位解码出 flag → PASS；无隐形字符或解码乱码 → FAIL。
+- **来源**：gslab 2017 note（misc）｜六星战队（中国）｜raw/github-repos/sixstars/2017_gslab_h_note.md（编解码函数与自定义表全量在 WP）
+- **关联**：与 [[编码套娃链识别与解链]] 互补——套娃条管「层识别」、本条管「字母表面替换」；Q1 归位说明：按编码实质归 encoding（选材线记 misc 合集归类）。
+- **陷阱备注**：变体表常与魔数常量相邻出现（`0123-4567-89ab-cdef` 循环是本题定位锚）。
+### 游戏 glyph 密码破译（Noita 眼睛符文 + 维基对照）
+- **分层**：困难档·复合链
+- **假设**：两图所引符号是游戏 Noita 的眼睛字母文字（社区已破解）⇒ 检索 wiki/社区解码资料建立 glyph→字符映射 → 解出首段提示（编码方式说明）+ 次段编码正文 → 按提示做二次转换得旗。
+- **验证步骤**：1) 识图确认 Noita 眼睛符文；2) 对照 noita wiki Eye Messages 映射；3) 按首段指示的编码（如 7 数结构/7 进制）转换；4) 校验旗格式。
+- **判定标准**：PASS = 二次转换后旗格式成立；FAIL = 映射歧义（镜像/旋转形）→ 用高频字校准。
 - **裁决词**：待复跑
-- **来源**：Zero-width stego 公开工具（zwsp-steg）、Unicode 隐写赛题题解
-
-### 编码与加密的分界判定
-- **假设**：拿到乱码先回答"这是编码还是加密"：无密钥/密钥即算法名 → 编码（本文件）；有明确密钥材料（RSA 参数/密钥串）→ crypto（category-crypto.md）。判定错方向是编码题第一大浪费源。
-- **验证步骤**：
-  ```text
-  1. 有无密钥线索（题面 key、附件 .key/.pem）？无 → 编码系优先
-  2. 解码尝试 2~3 层失败且输出高熵 → 转 crypto（可能是 AES/RC4 密文）
-  3. 输出低熵但不可读（如 Base85 的 b'' 边界）→ 换家族重试
-  ```
-- **判定标准**：30 分钟内按分界路径找到正确家族 → PASS；反复跨家族乱试 → FAIL（复盘记录分界信号缺失点）。
+- **来源**：Hacky Easter 2024 Eyes Reading（misc medium）｜ngroegli｜raw/github-repos/ngroegli/hacky-easter-2024/Level5-Cinque/EyesReading/README.md（社区资料链接与解码输出在 WP）
+- **关联**：[[替换密码·旗即密钥（密钥表重建）]] 的游戏文字版——密钥表来源从 oracle 换成社区知识库。
+### 16 字符字母表 Vigenère（b16 前置 + 逐位独立密钥爆破）
+- **分层**：困难档·单点
+- **假设**：明文先 b16（字节→两个 4bit 半字节→16 字符表字符）再与未知密钥循环异或/移位 ⇒ 同密钥位对应的密文字符集合不受其他位影响 → 对每个密钥字符独立枚举 16 种候选，以「解出半字节对拼回可打印 ASCII」过滤。
+- **验证步骤**：1) 密文按 16 字符域校验；2) 逐密钥位枚举 16 值；3) 半字节拼装 + hex 可读性过滤；4) 拼 picoCTF{} 校验。
+- **判定标准**：PASS = 唯一密钥使全部位可解码；FAIL = 多候选 → 用 MD5 形态旗校验。
 - **裁决词**：待复跑
-- **来源**：M2 复盘经验（编码套娃实战）、CyberChef Magic 自动识别逻辑
+- **来源**：picoCTF 2021 New Vignere（crypto 300p）｜Dvd848（S1 扩容源）｜raw/github-repos/Dvd848/2021_new-vignere-md_h_new-vignere.md（b16 解码与爆破代码在 WP）
+- **关联**：关键差异 = 与 [[编码套娃链识别与解链]] 同「双层结构」但外层是循环密钥而非逐层编码——独立可枚举性来自密钥循环结构。
+### 排版 Bacon 密码（斜体/正体交替 5bit）
+- **分层**：困难档·单点
+- **假设**：正文以字体属性（斜体 vs 正体）作为二进制信道，5 字符一组按 Bacon 码表转字母 ⇒ 提取段落中每词的字符样式序列 → a/b 二值化 → 5bit 分组查表 → 去除填充（X）得旗。
+- **验证步骤**：1) 解析 HTML/富文本样式标注；2) 按字符生成 a/b 序列；3) 5bit 查表；4) 尾部 X 填充规则（AAAAA/BBBBB→X）校验。
+- **判定标准**：PASS = 解码串成旗；FAIL = 样式解析遗漏空格/标点 → 以原文长度整除 5 复核。
+- **裁决词**：待复跑
+- **来源**：Hackvent 2019 Day 06 Bacon and Eggs｜shiltemann（CI team）｜raw/github-repos/shiltemann/2019_hackvent_h_day-06-bacon-and-eggs.md（样式序列与解码输出在 WP）
+- **关联**：与 [[文本空白字符隐写（空格/制表符二进制）]] 同「排版属性信道」族——关键差异 = 本条用字体样式、该条用空白字符，提取器不同但 5bit 分组同构。
+### 自改写字节码 VM 谐振编程（三层变换 + 精确周期预算）
+- **分层**：困难档·复合链
+- **假设**：自改写 VM 上须一次性命中三层「谐振」校验（置换门、耦合递推、椭圆曲线点）且总执行周期严格落窗（112 cycles）⇒ 离线预计算三段的正确输入组合（含 SAT/暴力可行部分），再以紧凑操作码编码 + 无操作垫圈把尾指令精确落在窗口内。
+- **验证步骤**：1) 读 VM ISA 确定指令周期表与自改写规则；2) 三层变换分别求满足输入；3) 组装程序并计算周期；4) pad no-op 至 112 周期；5) 上载执行验证谐振。
+- **判定标准**：PASS = 三环同时谐振且周期命中；FAIL = 周期超窗 → 换更短编码路径（复用指令/自改写折叠）。
+- **裁决词**：待复跑
+- **来源**：CSS CTF 2026 Return of Nexus The Astrolabe Overwrite（misc 250p/162 解）｜hax1ng｜raw/github-repos/hax1ng_css-ctf-2026-return-of-nexus/misc/the-astrolobe-overwrite/README.md（预计算与编码策略在 WP）
+- **关联**：[[多源碎片雕刻与权威哈希仲裁（NXFR 记录）]] 同赛事姊妹题——「精确预算」纪律互证（那条是 hash 仲裁、本条是周期窗）。
+- **陷阱备注**：静重部分（椭圆曲线）离线算，活重部分（beacon 同步+编码）保持轻量——「离线算重的、在线跑轻的」。
