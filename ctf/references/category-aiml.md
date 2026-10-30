@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "ctf-corpus 蒸馏层 P1+P2 批次（distill/by-category/aiml），原始 WP 见 ctf-corpus/raw/ 与 meta/register.jsonl"
 changelog:
+  - "[2026-10-30] v0.6：蒸馏 P3 批次并入 3 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/aiml/p3-20261029.md + candidates.jsonl（P3 批次报告 02）"
   - "[2026-10-30] 回流复跑轮：4 条全裁决（torch.load RCE PASS；LLM UCT / embedding 时压 / Poe 注入 INCONCLUSIVE 缺环境与活体通道，缺口清单入条目）；证据归档 shared/wtf-reflight-evidence-20261030/"
   - "[2026-10-29] v0.5 新库：蒸馏 P1+P2 批次建库并入 4 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜11→10 库映射见 ctf-wp 采集规划 §4.4"
 ---
@@ -25,6 +26,9 @@ changelog:
 2. [LLM 约束解码 + UCT 树搜索恢复审查文本](#llm-约束解码-uct-树搜索恢复审查文本)（inconclusive）
 3. [embedding 余弦相似度时压题自动化（OpenAPI 规格驱动）](#embedding-余弦相似度时压题自动化openapi-规格驱动)（inconclusive）
 4. [LLM bot prompt 注入泄漏系统提示（Poe 部署面）](#llm-bot-prompt-注入泄漏系统提示poe-部署面)（inconclusive）
+5. [MCP 工具服务器沙箱逃逸（process 字符串拼接 + VM 行为差）](#mcp-工具服务器沙箱逃逸process-字符串拼接-vm-行为差)（hypothesis）
+6. [游戏内嵌 REPL 的 builtins 逃逸（print.__globals__ 链）](#游戏内嵌-repl-的-builtins-逃逸print__globals__-链)（hypothesis）
+7. [UID 0 后门用户持久化循环的排查清理](#uid-0-后门用户持久化循环的排查清理)（hypothesis）
 
 ### torch.load 反序列化 RCE（pickle 载体模型文件）
 - **分层**：困难档·复合链
@@ -78,3 +82,30 @@ changelog:
 | # | 日期 | 环境/靶场 | 命令或脚本 | 裁决词 | 工件路径 | 备注 |
 |---|---|---|---|---|---|---|
 | 1 | 2026-10-30 | 沙箱网络 + web_reader 旁路 | poe_probe.sh（curl/agent-browser 双探） + web_reader 读取 bot 页 | INCONCLUSIVE | shared/wtf-reflight-evidence-20261030/poe-probe.log + aiml24-env-check.md | 直连全超时（B 会话空壳日志同因）；旁路确认页面存活；具备 Poe 登录态的运行环境可续跑 |
+
+### MCP 工具服务器沙箱逃逸（process 字符串拼接 + VM 行为差）
+- **分层**：困难·多段链
+- **假设**：sandcastle 的 Claude Code MCP 工具把用户代码丢进 JS VM 沙箱执行 execute 工具：黑名单按字面匹配 process/fs 等 token——用字符串拼接 this["p"+"rocess"] 绕过；VM 沙箱内 process 未定义走 else 分支、宿主侧 eval 展开后 this 指 global（行为差），据此 process.mainModule.require("fs").readFileSync("/flag") 读文件；工具返回值再过双层 JSON 解出 byte 数组拼 ASCII。
+- **验证步骤**：1) 向 MCP 端点发 tools/call JSON-RPC（method execute、arguments.code）；2) code 用拼接串访问 process.mainModule.require；3) 读 /flag 返回 Buffer JSON；4) chr(x) 数组拼接出旗（AppSec-IL{D3bu991n9_15_7h3_w@y}）。
+- **判定标准**：PASS = JSON-RPC 一次调用取回 flag 字节串；FAIL = 在沙箱内直接写 process（字面量被黑名单拦截）或以为要打 Claude 模型本体（攻击面在 MCP 工具执行环境，不在模型）。
+- **裁决词**：待复跑
+- **来源**：AppSec-IL 2025 Sandcastle｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2025_sandcastle-md_h_sandcastle.md（完整 solve.py 与响应原文在 WP）
+- **关联**：与 [[LLM bot prompt 注入泄漏系统提示（Poe 部署面）]] 组成「AI 应用部署面攻击」双视角（模型侧/执行侧）；沙箱黑名单拼接绕过与 [[Node 原型污染进 Handlebars 模板 RCE（endsWith WAF 旁路）]] 同属「过滤器字面量缺陷」族。
+
+### 游戏内嵌 REPL 的 builtins 逃逸（print.__globals__ 链）
+- **分层**：困难·单点
+- **假设**：h4ck1ng.google E03C02 的 scape 迷宫是 Python 实现的终端游戏且接受任意输入回显：不必走迷宫——输入里直接给 print.__globals__['__builtins__'].__import__('os').system('cat flag')，借游戏自身的输出通道执行系统命令读旗。
+- **验证步骤**：1) nc 连服务确认输入回显不转义；2) 提交 payload（单行 Python 表达式）；3) 回显中收集命令输出；4) 若过滤 import 则改 __builtins__ 链内 getattr 变体。
+- **判定标准**：PASS = 一条 payload 直接出旗；FAIL = 老老实实走迷宫解谜（出题方明示 escape 是字面义——逃出 VM/游戏而非出地图）。
+- **裁决词**：待复跑
+- **来源**：H4ck1ng Google CTF 2022 E03C02（The Simulacrum）｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2022_e03c02-md_h_e03c02.md（payload 原文在 WP）
+- **关联**：与 [[torch.load 反序列化 RCE（pickle 载体模型文件）]] 同族「数据通道变代码通道」；builtins 链与 [[自改写字节码 VM 谐振编程（三层变换 + 精确周期预算）]] 共享「运行时对象图漫游」直觉。
+
+### UID 0 后门用户持久化循环的排查清理
+- **分层**：困难·单点
+- **假设**：环境被植入 root 权限 while 循环：每 5 秒检查 backdoor 用户不存在则 useradd -u 0 -o -s /sbin/nologin backdoor 并设弱口令——普通删除会被循环复活；须先定位并终止循环宿主进程（pkill 脚本/查 cron 或 ssh 会话父进程），再清用户（userdel）/passwd 锁定，清干净后约 1 分钟 /checklog 出旗。
+- **验证步骤**：1) ps auxf 定位持有该循环的 bash/脚本进程与其父链；2) 终止循环宿主（必要时先断定时器/父会话）；3) userdel backdoor 清残留家目录与 sudoers/authorized_keys 关联项；4) 观察 ≥60s 确认不复活；5) 读 /checklog 取旗。
+- **判定标准**：PASS = 60s 后仍无 backdoor 且 /checklog 出旗；FAIL = 只 userdel 不杀循环（5 秒内复活）或漏删 authorized_keys 级残留。
+- **裁决词**：待复跑
+- **来源**：强网杯青少年专项赛 2024 删除后门用户2｜CTF-Archives（官方赛题存档仓）｜raw/cn-events/qsnxbs2024/2024_qsnxbs2024_删除后门用户2.md（原题循环脚本与复现指南全量在 WP）
+- **关联**：与 [[挖矿 IR 问卷链（路径→矿池→持久化，md5 口径留痕）]] 同族「先斩持久化宿主再清本体」；UID 0 隐蔽用户检测与 [[SMB 会话凭据还原 + 社工字典命名规律（姓名+生日）+ 后门账号回溯]] 的后门账号回溯支线互补。

@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "CTF-wiki（reverse 章节）、mukul975/Anthropic-Cybersecurity-Skills（结构化条目范式）、M2 实测复跑（2026-10-15）"
 changelog:
+  - "[2026-10-30] v0.6：蒸馏 P3 批次并入 7 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/reverse/p3-20261029.md + candidates.jsonl（P3 批次报告 02） + 修正批同步（46 修正批涉已入库条目，pilot/04-修正简报）（本文件 2 处）"
   - "[2026-10-29] v0.5：蒸馏 P1+P2 批次并入 16 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜源：ctf-corpus/distill 候选池（candidates.jsonl）+ distill/pilot/01-蒸馏批次报告-P2-20261029.md"
   - "[2026-10-15] 初始空壳，等待首个回流条目"
   - "[2026-10-15] v0.2：条目模板升级为五段式假设条目 + 机器可校验裁决词（REFLIGHT 回流协议，见 ../../shared/REFLIGHT.md）"
@@ -47,6 +48,13 @@ changelog:
 18. [8051 固件 EEPROM 导出 + 位级 patch（anl 立即数清零）](#8051-固件-eeprom-导出-位级-patchanl-立即数清零)（hypothesis）
 19. [EFI 字节码 VM 逆向 + z3 求解（EBC 运行时）](#efi-字节码-vm-逆向-z3-求解ebc-运行时)（hypothesis）
 20. [多进程互斥校验逆向 + AES 轮密钥恢复（3-process lock）](#多进程互斥校验逆向-aes-轮密钥恢复3-process-lock)（hypothesis）
+21. [LEGO NXT 字节码逆向（fantom VM + 位序反排）](#lego-nxt-字节码逆向fantom-vm-位序反排)（hypothesis）
+22. [反调试线程时序对抗（debug 断点贪吃蛇 + 常量表双解）](#反调试线程时序对抗debug-断点贪吃蛇-常量表双解)（hypothesis）
+23. [差分 XOR 常量链还原（相邻差分级联）](#差分-xor-常量链还原相邻差分级联)（hypothesis）
+24. [WebAssembly XOR 壳三工具剥层（0xdd 异或 + wasm2wat/c/Ghidra）](#webassembly-xor-壳三工具剥层0xdd-异或-wasm2watcghidra)（hypothesis）
+25. [DOS MZ 哈希截断碰撞（shl 语义误用 + z3 求解）](#dos-mz-哈希截断碰撞shl-语义误用-z3-求解)（hypothesis）
+26. [ICD 规范驱动的遥测二进制解析（ctypes 结构体 + OSINT 收官）](#icd-规范驱动的遥测二进制解析ctypes-结构体-osint-收官)（hypothesis）
+27. [自定义 asm 解释器插桩取密（muffin VM cmp 打点）](#自定义-asm-解释器插桩取密muffin-vm-cmp-打点)（hypothesis）
 
 ### strings 明文侦察（含输出截断坑）
 - **假设**：未加壳二进制的校验逻辑/flag 往往以明文字符串（提示语、比较目标、格式串）存在于 .rodata → `strings -n 6 <bin> | grep` 关键词是最快的第一轮侦察。
@@ -234,7 +242,7 @@ changelog:
 - **验证步骤**：1) EBC_disassembler 定指令流；2) 依 EBC spec 把 STACK/REL 语义翻成 z3 表达式；3) 加旗格式约束求解；4) 逐条回放 VM 验证。
 - **判定标准**：PASS = 模型唯一且过 VM；FAIL = 约束不定 → 追加可打印约束/已知分段。
 - **裁决词**：待复跑
-- **来源**：TWCTF 2016 ebc（reversing 111p/52 解）｜p4 (波兰战队)｜raw/github-repos/p4/2016_twctf_h_ebc.md（VM 求值器与 z3 约束脚本在 WP 附件；本地可重放）
+- **来源**：TWCTF 2019 EBC｜pwning（S1扩容）｜raw/github-repos/pwning/2019_twctf_h_ebc.md（VM 求值器与 z3 约束脚本在 WP 附件；本地可重放）
 - **关联**：[[brainfuck VM 执行轨迹跟踪（解码即抹零）]] 的静态对偶——动态 trace vs 符号求解殊途同归；Q1 归位说明——按 VM 逆向实类归 reverse（选材线记 encoding 合集归类）。
 
 ### 多进程互斥校验逆向 + AES 轮密钥恢复（3-process lock）
@@ -243,6 +251,69 @@ changelog:
 - **验证步骤**：1) 交叉引用定位 3 进程入口与锁交互；2) 逐进程 F5 恢复校验逻辑；3) 逆 key schedule 补全轮密钥；4) 解密得剩余约束并求解。
 - **判定标准**：PASS = 组合密码过三进程校验出旗；FAIL = 锁顺序假设错 → 按竞态日志重定顺序。
 - **裁决词**：待复跑
-- **来源**：MeePwn CTF 2018 Quals xss (re 233p/27 解)｜p4 (波兰战队)｜raw/github-repos/p4/2018_meepwn_h_xss.md（三进程分析与 AES 轮密钥恢复脚本在 WP；本地 wine/IDA 可重放）
+- **来源**：MeePwn CTF 2018 Quals xss (re 233p/27 解)｜p4 (波兰战队)｜raw/github-repos/p4/2018_meepwn-ctf_h_xss.md（三进程分析与 AES 轮密钥恢复脚本在 WP；本地 wine/IDA 可重放）
 - **关联**：与 [[魔改 AES 常量指纹识别（表全换场景裸写实现）]] 同「魔改 AES 逆推」族——关键差异 = 该条换表、本条截轮，恢复点分别在 S 盒与 key schedule。
 - **陷阱备注**：Q1 归位说明——按校验逆向实类归 reverse（选材线记 encoding 合集归类）；题名 xss 有误导性（实为 re）。
+
+### LEGO NXT 字节码逆向（fantom VM + 位序反排）
+- **分层**：困难·单点
+- **假设**：turing_mario 的 magic 属 LEGO NXT 固件字节码：TBD 文件可按 fantom 规范反汇编；t000 例程为滚动 XOR 校验链——sw0053 初值 0xaf、每轮 sw0053 ← sw0057、输入经 asl+or 逐位灌入 sw0057 会产生位序颠倒（类似 endian 问题），把每字节 8bit 反转后 XOR 结果即落可见字符区。
+- **验证步骤**：1) 识别 NXT magic 并找 Common Lisp disasm 或反编译产物；2) 读 t000 循环：XOR 目标 a00E5 常量数组 32 项；3) 按位反转函数 rev(a)=bin 反序 ljust 8 处理输入；4) 逐字节 XOR 得 flag。
+- **判定标准**：PASS = 32 字节全可读；FAIL = 不做位反转直接 XOR（asl+or 灌位导致 LSB/MSB 反序输出乱码）。
+- **裁决词**：待复跑
+- **来源**：XNUCA 2016 turing_mario｜六星战队（swordfeng 反编译稿）｜raw/github-repos/sixstars/2016_xnuca_h_turing-mario.md（sword 数组+rev 函数在 WP）
+- **关联**：与 [[FPGA 比特流逆向（iCE40 IceStorm 工具链）]] 同属「非主流硬件目标工具链考古」；位反陷阱与 [[编译期 CFG 深度乘积水印提取（小素数编码）]]共享「位级语义先验」纪律。
+
+### 反调试线程时序对抗（debug 断点贪吃蛇 + 常量表双解）
+- **分层**：困难·单点
+- **假设**：schrodingers_debug 主线程开 IsDebuggerPresent 风格自陷线程（先置 int3/改返回再自查），动态调必进反调试分支；但校验本体为纯静态比较链——未知 4 字节 key 由两组 4 字节查表值对拼（表值在数据段、两两交替命中一 target），可离线穷举 256^4 或按表结构反解 key；解出再跑二进制出 flag（ScHr0d1ng3r_D3bUg）。
+- **验证步骤**：1) 静态读两表结构与命中条件（每表 256 项、目标 target16 值）；2) 对每表穷举取命中位集，两集交织得 key（或 z3 约束求解）；3) 运行输入 key；4) 若仍失败回查反调试分支是否参与校验（本题为纯干扰）。
+- **判定标准**：PASS = 离线推得 key 且运行通过；FAIL = 试图 attach 调试硬穿反调试（线程时序化导致断点漂移）。
+- **裁决词**：待复跑
+- **来源**：XNUCA 2016 schrodingers_debug｜六星战队｜raw/github-repos/sixstars/2016_xnuca_h_schrodingers-debug.md（195 →ScHr0d1ng3r_D3bUg 序列在 WP）
+- **关联**：与 [[Windows 逆向前置条件 patch（参数校验 + PEB 反调试 #DE）]] 同族反调试处置（本条走「不调试、纯静态」路线）；与 [[glibc rand() 状态恢复（z3 约束求解 31 状态字）]]共享「约束求解代替动态」方法论。
+
+### 差分 XOR 常量链还原（相邻差分级联）
+- **分层**：困难·单点
+- **假设**：transformation 二进制极短：数据段 22 个 dword 常量（低字节有效 0x45,0x74,0x19,...），明文相邻差分满足 flag[i]=f[i]^f[i+1]，而 flag[0]='S'（即首差分 f[0]^f[1]）作锚——即一次相邻 XOR 级联即可整串还原（S1mp1e_mips_0ne_by_one）；警示：strings 直接能搜到同串（出题者埋的陷阱——解完应核对数据段来源）。
+- **验证步骤**：1) 定位常量数组（IDA 数据窗 22×dword）；2) 取每 dword 低字节为 f[i]；3) for i: chr(f[i]^f[i+1]) 级联拼接；4) 以 flag[0]='S'（即 f[0]^f[1]）验证锚点。
+- **判定标准**：PASS = 级联串完整可读且 'S' 起头；FAIL = 只对 f[i]^22 之类的单常量 XOR（WP 作者也走过该弯路，产出乱码）。
+- **裁决词**：待复跑
+- **来源**：XNUCA 2016 transformation｜六星战队｜raw/github-repos/sixstars/2016_xnuca_h_transformation.md（两种 XOR 尝试对照与 strings 陷阱备注在 WP）
+- **关联**：与 [[密钥长度侧信道 + Vigenère 解码（LEN(KEY) oracle）]] 同属「差分先验破对称密码」；strings 陷阱与 [[元数据伪旗注释的格式校验防误信]] 共享「先验渠道的假阳性甄别」主题。
+
+### WebAssembly XOR 壳三工具剥层（0xdd 异或 + wasm2wat/c/Ghidra）
+- **分层**：困难·多段链
+- **假设**：finally-home 表单答案校验藏在 WebAssembly：HTML 内嵌 XOR 0xDD 加密的 wasm 字节（解出为 script.wasm），JS 用 console.log 钩子改调 ver 导出函数（每字符一个参数）；wabt 的 wasm2wat --generate-names、wasm2c、wasm-decompile 三前端转译后按 C 语义读校验逻辑，推导合法输入串。
+- **验证步骤**：1) 抓 HTML 中 buff 密文并 XOR 0xdd 落盘 script.wasm；2) wasm2wat/c/decompile 三路导出（C 最可读）；3) 读 ver 入参逐参比较链；4) 反推满足全部条件的输入提交。
+- **判定标准**：PASS = 反推输入过表单验证；FAIL = 试图在浏览器断点 wasm（ver 挂在 console.log 上、参数逐字符传递，动态观察成本高）。
+- **裁决词**：待复跑
+- **来源**：CyberArk CTF 2021 Finally - home! (5/5)｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2021_finally-home-md_h_finally-home.md（解壳脚本与三前端转译命令全量在 WP）
+- **关联**：与 [[WebAssembly 反调试逆向（wasm2wat 文本化 + debugger 循环）]] 为 wasm 双例（本条 XOR 壳 + C 转译，彼条反调试 + 文本层）；与 [[pyobfuscate 混淆还原（lambda 派发 + 自定义表 base64）]]共享「转译到可读层再逆」。
+
+### DOS MZ 哈希截断碰撞（shl 语义误用 + z3 求解）
+- **分层**：困难·单点
+- **假设**：dkdos.exe 为 DOS MZ 程序，r2 可直接分析（M/S 标志）：口令校验为 16 位滚动哈希 res=(res<<2+c)&0xFFFF——每次字符使累加器左移 2（错把 shl word,1 用两次当乘 4），第 9 个字符起首字符被移出；与目标 0xcfe1 比较因此存在大量碰撞（任何 8 字节串只要后续位重叠一致即可），用 z3 约束 8 字节可打印域即可求得任一有效口令（不唯一）。
+- **验证步骤**：1) r2 aaa 反汇编定位 hash 函数（shl 1;shl 1;add 三连）；2) Python 重写 hash 语义；3) z3 建 8×BitVec(16) 约束 0x21..0x7e 且 hash==0xcfe1；4) 求得口令 nc 提交换 flag。
+- **判定标准**：PASS = 求解口令登录成功；FAIL = 按完整 32/64 位哈希理解去爆破（截断语义下超定）。
+- **裁决词**：待复跑
+- **来源**：KIPodAfterFree CTF 2019 DKDOS｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2019_dkdos-md_h_dkdos.md（r2 会话+两种解口令对照在 WP）
+- **关联**：与 [[自研分配器 1 字节 footer 覆盖（块链伪造 + GOT 覆写）]]共享「r2 全程可做」示范；哈希截断碰撞与 [[zip 多态 MD5 碰撞（EOCD 解析歧义 + 幂等哈希校验）]]同属弱哈希工程缺陷族。
+
+### ICD 规范驱动的遥测二进制解析（ctypes 结构体 + OSINT 收官）
+- **分层**：困难·多段链
+- **假设**：ATH_Tele.bin 是按 ICD 接口控制文档（docx）定义的遥测帧流：xxd 可见 0xdd 0x01 前缀周期出现——即 COORDINATE_TELE 坐标记录（sync+id+uint32 经度+uint32 纬度+uint16 校验和，小端 _pack_=1）；按 ctypes 结构体正则提取全部记录，坐标×1e-5 缩放后过 reverse geocoding，得到多国地点集合，谜底（山洞名）藏于坐标命名规律与 OSINT 检索。
+- **验证步骤**：1) 读 ICD 文档确定帧型表（其余帧型字段被涂黑，坐标型完整）；2) re.DOTALL 按 \xdd\x01.{4}.{4}.{2} 抓 12 字节记录；3) ctypes Structure 解析并校验 checksum；4) 坐标换算后 nominatim 逆地码 + 检索目标地名。
+- **判定标准**：PASS = 全部坐标解析合法且谜底地点可检索命中；FAIL = 按大端解析（lat/lon 变天文数字）或忽略 checksum 字段错位。
+- **裁决词**：待复跑
+- **来源**：Technion 2020 Indiana Jones and the Coded Cave｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2020_indiana-jones-and-the-coded-cave-md_h_indiana-jones-and-the-coded-cave.md（ctypes 解析器与 API 查询全量在 WP）
+- **关联**：与 [[C2 指令流还原（双 ;;分隔协议 + push 分组过滤）]]同族「二进制/文本协议帧流还原」——本条反向：有 ICD 规范按图索骥；OSINT 收官与 [[街景照片设施定位（双语检索 + 现地语正式名称）]]共享地理检索方法论。
+
+### 自定义 asm 解释器插桩取密（muffin VM cmp 打点）
+- **分层**：困难·单点
+- **假设**：muffin_asm.py 是 12 指令 Python 字节码解释器（add/addv/sub/subv/xor/xorv/cmp/cmpv/je/jne/wchr/rchr），程序逐字符 cmp 校验输入：不改逻辑只改 cmp 分支（打印 r[r1] 与比较值）或 wchr，跑一遍即把期望字符序列全打出来——「解释器插桩」优于「读字节码」。
+- **验证步骤**：1) 读 run() 调度与 codez 字节流格式（op+args 变长）；2) 在 _cmp/_cmpv 里加 print；3) 输入任意串运行收集比较值序列；4) 按序拼出 flag（HV17-mUff!n-4sm-!s-cr4zY）。
+- **判定标准**：PASS = 插桩一轮取得全部期望字节；FAIL = 人工读 0x60+ 字节流 opcode 手译（工作量大且易错）。
+- **裁决词**：待复跑
+- **来源**：HackVent 2017 Dec 13 muffin_asm｜Shiltemann (Galaxians)｜raw/github-repos/shiltemann/2017_hackvent_h_readme.md（解释器源码与修改点全量在 WP）
+- **关联**：与 [[brainfuck VM 执行轨迹跟踪（解码即抹零）]]同族「解释器侧插桩」；与 [[LEGO NXT 字节码逆向（fantom VM + 位序反排）]]对照——同为自定义 VM，本条走插桩、彼条走反汇编。

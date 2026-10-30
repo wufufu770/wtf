@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "CTF-wiki（crypto 章节）、PayloadsAllTheThings（RSA）、M2 实测复跑（2026-10-15）"
 changelog:
+  - "[2026-10-30] v0.6：蒸馏 P3 批次并入 8 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/crypto/p3-20261029.md + candidates.jsonl（P3 批次报告 02） + 修正批同步（46 修正批涉已入库条目，pilot/04-修正简报）（本文件 2 处）"
   - "[2026-10-29] v0.5：蒸馏 P1+P2 批次并入 29 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜源：ctf-corpus/distill 候选池（candidates.jsonl）+ distill/pilot/01-蒸馏批次报告-P2-20261029.md"
   - "[2026-10-15] 初始空壳，等待首个回流条目"
   - "[2026-10-15] v0.2：条目模板升级为五段式假设条目 + 机器可校验裁决词（REFLIGHT 回流协议，见 ../../shared/REFLIGHT.md）"
@@ -59,6 +60,14 @@ changelog:
 31. [密钥长度侧信道 + Vigenère 解码（LEN(KEY) oracle）](#密钥长度侧信道-vigenère-解码lenkey-oracle)（hypothesis）
 32. [Hill 矩阵加密的三段攻破（差分恢复 / 核空间失效 / CVP 可打印化）](#hill-矩阵加密的三段攻破差分恢复-核空间失效-cvp-可打印化)（hypothesis）
 33. [Shamir 秘密分享的「一次多项式复用」崩溃（逐字符独立爆破）](#shamir-秘密分享的一次多项式复用崩溃逐字符独立爆破)（hypothesis）
+34. [已知 padding 的 RSA related-message 消元（e=3 三密文线性化）](#已知-padding-的-rsa-related-message-消元e3-三密文线性化)（hypothesis）
+35. [dq 泄漏分解 RSA 模数（部分涂抹私钥恢复）](#dq-泄漏分解-rsa-模数部分涂抹私钥恢复)（hypothesis）
+36. [重复密钥 XOR 的空格频率攻击（互移位重合计数定键长）](#重复密钥-xor-的空格频率攻击互移位重合计数定键长)（hypothesis）
+37. [RSA 解密权游戏数论陷阱（d=1 与 c^{-1} 旁路）](#rsa-解密权游戏数论陷阱d1-与-c-1-旁路)（hypothesis）
+38. [DOS/Win16 载体内嵌异或密钥（中断向量表作 key）](#doswin16-载体内嵌异或密钥中断向量表作-key)（hypothesis）
+39. [PKI 中间 CA 证书链伪造（mTLS 客户端认证旁路）](#pki-中间-ca-证书链伪造mtls-客户端认证旁路)（hypothesis）
+40. [硬件指纹口令逆向（盘符序列+MAC+BIOS SN 拼装）](#硬件指纹口令逆向盘符序列macbios-sn-拼装)（hypothesis）
+41. [游戏源码 diff 钓鱼后门（定种子 RNG + RC2 解密）](#游戏源码-diff-钓鱼后门定种子-rng-rc2-解密)（hypothesis）
 
 ### RSA 共模攻击（Håstad）
 - **假设**：同一明文 m 用同一模数 n、两个互质指数 e1/e2 加密（c1=m^e1 mod n, c2=m^e2 mod n）→ 由扩展欧里得找 a,b 使 a·e1+b·e2=1，则 m = c1^a · c2^b mod n，无需分解 n。
@@ -205,7 +214,7 @@ changelog:
 - **验证步骤**：1) output.txt 数值化（每行 hex）；2) 枚举 p，按公式逐项恢复 c[5..41] 过滤 ASCII；3) 唯一 p → 拼已知前缀 flag{ 与 UUID 尾格式校验；4) 从状态 X[4] 逆推 x0=y0/c… 得初始 k；5) 正向模拟 42 字符与原文比对。
 - **判定标准**：PASS = 唯一 p 候选 + 全模拟逐字节一致；FAIL = 多候选 → 加强已知明文/格式过滤（UUID 长度与尾部 `}`）。
 - **裁决词**：待复跑
-- **来源**：网鼎杯 2022 青龙组 grasshopper（26 solved）｜lkok123（bugku WP 库）｜raw/cn-platforms/bugku/wp-detail/wp_1874.html（完整 exp 在 WP；正文 HTML 转换丢空格问题见试点报告 §7-B7）
+- **来源**：网鼎杯 2022 青龙组 grasshopper（26 solved）｜lkok123（bugku WP 库）｜raw/cn-platforms/bugku/wp-md/wp_1874.md（完整 exp 在 WP；md 版仍有转码空格吞噬，待 B-7 采集侧补修）
 - **陷阱备注**：先验「p 是标准参数」的假设不成立——p 本身是要枚举的未知量；已知明文 + ASCII 过滤是小域参数恢复的通用筛。
 
 ### ZK 电路缺位长检查（Groth16 非预期整数表示）
@@ -331,7 +340,7 @@ changelog:
 - **验证步骤**：1) 读协议确认「私钥方向」输出；2) 奇 e 枚举；3) pow(C,e,N)·inverse(2,N)；4) 前缀/可打印过滤命中。
 - **判定标准**：PASS = 唯一命中 e 并解出旗；FAIL = e 空间被扩（>2^20）→ 转共模/广播收集路径。
 - **裁决词**：待复跑
-- **来源**：HCTF 2017 babyRSA｜六星战队（sixstars）｜raw/github-repos/sixstars/2017_hctf_h_readme.md（交互协议与枚举脚本在 WP；e 空间小本地枚举快）
+- **来源**：HCTF 2017 babyRSA｜六星战队（sixstars）｜raw/github-repos/sixstars/2017_hctf_h_hctf.md（交互协议与枚举脚本在 WP；e 空间小本地枚举快）
 - **关联**：Q1 边界——与 [[RSA 小明文攻击（e=3 无填充）]] 同「小参数空间」族但方向相反（私钥侧），关键差异 = 枚举对象是 e 且需模逆还原放大系数。
 
 ### Double DES 中间相遇（6 位数字键空间）
@@ -370,3 +379,75 @@ changelog:
 - **裁决词**：待复跑
 - **来源**：Midnight Sun CTF 2018 Finals badchair (crypto)｜p4 (波兰战队)｜raw/github-repos/p4/2018_midnightsun-finals_h_badchair-crypto.md（爆破脚本全量在 WP；GF 线代本地秒级重放）
 - **关联**：与 [[RSA 密钥再生素数复用（(e0,d0) 泄漏恢复 p/q）]] 同「密钥材料跨实例复用」族——复用点在多项式 vs 素数，共因都是实现层偷懒。
+
+### 已知 padding 的 RSA related-message 消元（e=3 三密文线性化）
+- **分层**：困难·单点
+- **假设**：服务允许对同一明文 x 加「自定义但已知」的 sha256 padding 后以 e=3 加密并输出密文；设 (x+pad_i)^3 ≡ c_i (mod n)，三组方程经结式/手工消元先消 x^3、再消 x^2，剩一次方程即可解出 x——padding 数值大不碍事，关键只是「已知」。
+- **验证步骤**：1) 三次交互取 c1,c2,c3（各自 padding p1,p2,p3 已知）；2) 展开三多项式 g_i(x)=(x+p_i)^3-c_i；3) 两两取结式消去最高次项得线性余式；4) 模逆解一次方程得 x，hex 解码验证明文语义。
+- **判定标准**：PASS = 解出 x 满足 flag 模板；FAIL = 试图把 padding 当未知量（不可解）或只拿两方程硬凑（e=3 两方程消元后仍二次，三方程才稳定降次）。
+- **裁决词**：待复跑
+- **来源**：N1CTF 2018 rsa_padding｜六星战队｜raw/github-repos/sixstars/2018_n1ctf_h_writeup.md（n/ct/ans 全量在 WP，sage 可本地复算）
+- **关联**：与 [[近似素数构造 RSA（q = a·p + ε 的 Coppersmith 分解）]] 同属「多项式方程组降次攻 RSA」族；与 [[dq 泄漏分解 RSA 模数（部分涂抹私钥恢复）]] 互补构成「私钥侧信息泄漏」双视角。
+
+### dq 泄漏分解 RSA 模数（部分涂抹私钥恢复）
+- **分层**：困难·单点
+- **假设**：私钥 PEM 涂黑后残留两段：头部完整给 n、e；按 ASN.1 版式推第二段为 exponent2=dq。由 edq≡1 (mod q-1) 知 dq·e-1=k·(q-1)，遍历 k=1..e 的因子 i 使 (dq·e-1)%i==0，取 q=((dq·e-1)/i)+1 且 n%q==0 即分解成功。
+- **验证步骤**：1) base64 解私钥残文 → ASN.1 解析定 n/e/dq 位置；2) for i in 1..e: 若 (dq*e-1)%i==0 且 n%(((dq*e-1)//i)+1)==0 则得 q；3) p=n/q；4) phi=(p-1)(q-1)，gmpy2.invert(e,phi) 得 d；5) RSA.construct 重组 PEM，openssl pkeyutl -decrypt 解密文。
+- **判定标准**：PASS = 重组私钥可解出 flag；FAIL = 误把残留段当 dp（与 dq 位置对调则 q 换 p，等价）或漏乘 e（直接用 dq-1 试除永不出因子）。
+- **裁决词**：待复跑
+- **来源**：Google CTF 2024 bq Redacted RSA 2｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2024_redacted-rsa-2-md_h_redacted-rsa-2.md（双段 ASN.1 解析+解题脚本全量在 WP）
+- **关联**：与 [[RSA 密钥再生素数复用（(e0,d0) 泄漏恢复 p/q）]] 同族「私钥部分信息→模数分解」；涂抹版式分析与 [[PNG IEND 尾随增量字节提取（逆写入器）]] 共享「结构残留先读版式再谈恢复」直觉。
+
+### 重复密钥 XOR 的空格频率攻击（互移位重合计数定键长）
+- **分层**：困难·单点
+- **假设**：多字节 XOR 流密码（密钥周期 21）。英文文本空格最频且与字母异或后仍可区分：① shift 比对重合数在 key_len 倍数处出现峰值定周期；② 每个密钥位列内取众数 = 空格候选，c_i ^ 0x20 即该位密钥字节。
+- **验证步骤**：1) for key_len in 1..100 计算 count_same(data, shift(data,key_len))，峰值处取 21；2) 按列 Counter 统计，取各列最频字符假设为空格；3) 列密钥 = 该字符 ^ 0x20；4) 全量异或解密，按可读性微调个别列。
+- **判定标准**：PASS = 解密全文为可读英文且含 flag；FAIL = 峰值误读（重合数未归一化比较会把长周期当峰值）或众数误设为 'e'（空格才是英文众数）。
+- **裁决词**：待复跑
+- **来源**：HCTF 2018 xor game｜六星战队｜raw/github-repos/sixstars/2018_hctf_h_hctf.md（key_len=21 判定与逐列频率脚本全量在 WP）
+- **关联**：与 [[16 字符字母表 Vigenère（b16 前置 + 逐位独立密钥爆破）]] 同为「周期密码逐列频率攻击」，本条差异在密文空间为任意字节且空格 0x20 作 crib；与 [[多环 XOR 加密字典恢复（crib 拖拽）]] 互为字节级/单词级 crib 双路线。
+
+### RSA 解密权游戏数论陷阱（d=1 与 c^{-1} 旁路）
+- **分层**：困难·多段链
+- **假设**：远端提供「选 d、拿 c、得 m=c^d mod n」的解密服务。两个非预期解：① d=1 时 m≡c（幂退化为恒等，直接把目标密文当 m 交）；② 目标格 c 与 n 非互素且服务端实现未校验时，交 invert(c,n) 类旁路；另有 n=c-m 形态的恒等式可从方程侧反推。逐关切换恒等式/求逆即可过全关。
+- **验证步骤**：1) 枚举服务允许的 d 边界值（1、n-1、φ(n) 近邻）；2) 对每关先试 d=1 恒等直通；3) 不通则试把 c 交给「加密」方向反求 m；4) 用 python pow(c,d,n) 本地对照服务输出验证假设的运算语义。
+- **判定标准**：PASS = 每关不爆破 d 全部通关且本地 pow 复算一致；FAIL = 掉进「必须求真实 d」的思路陷阱（服务语义允许恒等幂）。
+- **裁决词**：待复跑
+- **来源**：骇极杯 2018 rsaaaaa｜六星战队｜raw/github-repos/sixstars/2018_haijibei_h_haijibei2018.md（逐关交互脚本与失败尝试记录在 WP）
+- **关联**：与 [[RSA LSB 甲骨文二分恢复明文]] 同属「把 RSA 交互服务当神谕玩语义边界」；失败样例价值与 [[相邻变量覆写改认证标志（authenticated 旁路）]] 呼应——先审服务语义再谈数学。
+
+### DOS/Win16 载体内嵌异或密钥（中断向量表作 key）
+- **分层**：困难·多段链
+- **假设**：challenge.flp 为 320KB FAT12 软盘镜像：解出后含 Win3.x NE 格式样本与 DOS MZ 引导器。样本的加密/校验密钥来自 DOS INT 21h 35h 取回的中断向量（INT 0x00/0x05/0x06 入口地址字节），因向量值取决于宿主环境，静态拿 0x00F0 之类的占位值必错——须在模拟器内运行取真值再 XOR 回密文。
+- **验证步骤**：1) file/7z 识别 flp 并解包；2) Ghidra 加载 NE/MZ 定位 INT 21 35 调用与异或循环；3) DOSBox 运行断点/转储取真实向量值；4) 以向量字节流 XOR 密文段核对 flag 模板。
+- **判定标准**：PASS = 模拟器内取值解出 flag；FAIL = 用静态反汇编里的占位向量值异或（环境相关性导致错钥）。PADDING 填充段为干扰项须剔除。
+- **裁决词**：待复跑
+- **来源**：BSidesTLV 2019 DoSaTTaCK｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2019_dosattack-md_h_dosattack.md（Ghidra 反编译+软盘结构全量在 WP）
+- **关联**：与 [[8051 固件 EEPROM 导出 + 位级 patch（anl 立即数清零）]] 共享「古董平台逆向」域；密钥环境依赖性与 [[glibc rand() 状态恢复（z3 约束求解 31 状态字）]] 同属「运行时状态作密钥」类。
+
+### PKI 中间 CA 证书链伪造（mTLS 客户端认证旁路）
+- **分层**：困难·多段链
+- **假设**：目标 Web 服务要求客户端证书（类 mTLS）。站点注册流程会替用户生成私钥+CSR 并由服务端签名，但签发程序未做 basicConstraints 防御：可提交自造「中间 CA」身份的 CSR，服务端以 CA:TRUE 签回；再自签一张终端用户证书挂在其下组成链，Web 容器校验链路时放行。
+- **验证步骤**：1) 抓注册流程 JS 确认 privatekey/CSR 隐藏域；2) openssl 生成中间 CA 密钥与含 CA:TRUE 的 CSR 提交；3) 拿回签发证书后自签 leaf 证书；4) 组 PKCS#12 装入 curl/浏览器完成客户端认证，取武器控制面板的关闭指令。
+- **判定标准**：PASS = 伪造链通过服务端校验并执行动作；FAIL = 只伪造 leaf 而无 CA 路径（单证书不在服务端信任 CA 链上被拒）。
+- **裁决词**：待复跑
+- **来源**：Mossad CTF 2019 Challenge #2｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2019_challenge2-md_h_challenge2.md（证书链构造脚本与 TLS 握手对照全量在 WP）
+- **关联**：与 [[Kerberos AS-REP Roast（无预认证用户哈希离线爆破）]] 同为「认证协议信任链弱点」；链构造纪律与 [[ISO→maildir→PGP→outguess 四段链取证]] 共享「逐层凭证装配」直觉。
+
+### 硬件指纹口令逆向（盘符序列+MAC+BIOS SN 拼装）
+- **分层**：困难·多段链
+- **假设**：EncryptSoftware.exe（Win32）要求输入口令，真口令由运行机器的硬件标识拼装：GetVolumeInformation 磁盘序列、网卡 MAC、BIOS 序列号按固定 checksum/拼接规则组合，再以自定义流混淆（RC4 变体/异或链）加密目标文件；脱离原机需在 Ghidra 还原拼装算法并在本机伪造同等标识。
+- **验证步骤**：1) Ghidra 反编译定位 hardware API 调用点与拼装循环；2) 提取 checksum 算法与字符集映射表；3) 在本地伪造标识（改注册表/虚拟 MAC/伪造 BIOS 字段）按算法计算口令；4) 运行程序以口令解密样本核对 PNG 头。
+- **判定标准**：PASS = 复算口令通过程序校验且解出文件头合法；FAIL = 把字符串表里的诱饵口令当真口令（诱饵常见于未交叉引用的死代码）。
+- **裁决词**：待复跑
+- **来源**：Mossad CTF 2019 Challenge #3｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2019_challenge3-md_h_challenge3.md（Ghidra 重命名后反编译与 main 全链在 WP）
+- **关联**：与 [[Windows SAM bootKey 转储 + SilentEye 隐写双密钥链]] 同族「系统指纹作密钥材料」；checksum 复算纪律与 [[语音念码留白的哈希约束恢复（小写/大小写双 SHA1 夹逼）]] 共享「约束反推」方法论。
+
+### 游戏源码 diff 钓鱼后门（定种子 RNG + RC2 解密）
+- **分层**：困难·多段链
+- **假设**：赛题基于开源 Commander Keen 源码魔改，flag 未直接藏于字符串，而在游戏状态机：diff 官方源码可定位改动点——gamestate 结构体新增 second_flag[24]，由数组 arr2 灌入、RC2 解密、通关才显示；关键差异还有 US_InitRndT(false)（固定种子 RNG）使密钥/流程可确定性重放。
+- **验证步骤**：1) 官方源码与赛题源码 diff 定位新增/改动函数；2) 读 second_flag 赋值与 rc2_cc_decrypt 调用链得密钥来源；3) 取 RC2 参考实现按密钥流程解 arr2；4) 或在 DOSBox+Borland C++ 2.0 编译原逻辑直接跑出（确定性种子保证可复现）。
+- **判定标准**：PASS = 解密串满足 CSA{...} 格式；FAIL = 直接跑游戏期望通关显示（第二 flag 仅在特定高分屏路径显示，且隐藏菜单注明 Status Window 不是它）。
+- **裁决词**：待复跑
+- **来源**：Check Point CSA 2020 Stateful Keen｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2020_stateful-keen-md_h_stateful-keen.md（diff 与 RC2 集成代码全量在 WP）
+- **关联**：与 [[编译期 CFG 深度乘积水印提取（小素数编码）]] 共享「开源基线 diff 出后门」方法论；确定性 RNG 与 [[rand() 未播种的服务端门禁（SSL 回显可预测）]] 同属固定种子缺陷族。

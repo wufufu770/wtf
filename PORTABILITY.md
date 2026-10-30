@@ -1,4 +1,4 @@
-# PORTABILITY.md — 跨 Agent 通用性说明（wtf / ctf，v0.5）
+# PORTABILITY.md — 跨 Agent 通用性说明（wtf / ctf，v0.6）
 
 > 本仓库是 SKILL-DUO 项目 ctf skill 的独立发行版。硬约束不变：**skill 不得绑定任何单一运行时**。任何支持 SKILL.md 约定（Anthropic Agent Skills 规范 / agentskills.io 事实标准）的 Agent 都应能直接加载。
 
@@ -28,11 +28,11 @@
 - 结构验证：name=目录名、description 长度、SKILL.md 行数、引用一层深，四项可用脚本静态检查。
 - 回流质量验证：tests/reflight-static-check.py 做静态校验——裁决词正则 `^(PASS|FAIL|INCONCLUSIVE)$` + 状态词枚举 + 复跑表存在性 + 图边引用存在性（v0.4 第 4 检：[[条目名]] 必须命中全库条目标题）。
 
-## 4. 实测指标（v0.5，2026-10-29 更新）
+## 4. 实测指标（v0.6，2026-10-30 更新）
 
 - ctf/SKILL.md：78 行（≤150 达标；v0.5 题型路由表 10 行 + 策略层行 + 策略跳转规则后仍达标）；description 964 字符（≤1024 达标）。
-- ctf 十题型知识库：五段式条目 158 条（web 27 / crypto 33 / forensics 26 / reverse 20 / pwn 19 / mobile 7 / recon 7 / misc 10 / encoding 5 / aiml 4；其中 134 条为 v0.5 蒸馏批次 P1+P2 并入，全部 hypothesis/待复跑）。
+- ctf 十题型知识库：五段式条目 268 条（web 35 / crypto 41 / forensics 66 / reverse 27 / pwn 25 / mobile 11 / recon 36 / misc 10 / encoding 10 / aiml 7；其中 134 条 v0.5 蒸馏 P1+P2 并入 + 110 条 v0.6 蒸馏 P3 并入，均自 hypothesis/待复跑起步；库内硬裁决 44 / 待复跑 244）。
 - 策略层（v0.5 首建）：references/strategy-{cross,pwn,crypto,forensics,recon,web}.md 六域策略页 16 条 + 机读 strategy.jsonl（镜像自 ctf-corpus 策略库，源库六检 6/6）。
-- v0.5 变更面：ctf/SKILL.md（路由表扩容 + 策略跳转）、ctf/references/ 十份 category-*.md（134 条并入）、新增六域策略页与 strategy.jsonl、README.md 与本文件同步 v0.5 指标——shared/ 与 tests/ 与 SKILL-DUO 源及 wpt 仓库保持字节同源（`diff -r` 零差异，本次未动）。
+- v0.6 变更面：ctf/references/ 十份 category-*.md（P3 批次 110 条并入 + 已入库条目修正批同步 33 项 + recon 重复标题清理 6 处）、ctf/SKILL.md（路由计数 v0.6）、README.md 与本文件同步 v0.6 指标——shared/ 与 tests/ 与 SKILL-DUO 源及 wpt 仓库保持字节同源（`diff -r` 零差异，本次未动）。
 - 跨 Agent 通用性硬约束逐项复核：frontmatter 双字段、无专有语法、一层深引用、无人类向文件——均未回退。
-- v0.4 指标存档：五段式条目 40 条（10 文件 × 4 条）；图边 9 条 / 节点 60 个；ctf/SKILL.md 76 行；description 1019 字符。
+- v0.5.1 指标存档：条目总数 158 不变、硬裁决 44 / 待复跑 134，图边 96 / 节点 194（v0.6 为图边 318 / 节点 304）；v0.5 指标：五段式条目 158 条，ctf/SKILL.md 78 行，description 964 字符。

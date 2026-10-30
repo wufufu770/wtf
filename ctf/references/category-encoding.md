@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "ctf-corpus 蒸馏层 P1+P2 批次（distill/by-category/encoding），原始 WP 见 ctf-corpus/raw/ 与 meta/register.jsonl"
 changelog:
+  - "[2026-10-30] v0.6：蒸馏 P3 批次并入 5 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/encoding/p3-20261029.md + candidates.jsonl（P3 批次报告 02）"
   - "[2026-10-30] 回流复跑轮：5 条全裁决（Noita/Vigenère/Bacon 三条 v3 求解器全 PASS——B 初版求解器缺陷已按 raw 原文重写修复，A 接手轮亲复跑全复现；gslab note/Astrolabe 二条数学核心部分复算成立但端到端素材缺失 → INCONCLUSIVE）；证据归档 shared/wtf-reflight-evidence-20261030/"
   - "[2026-10-29] v0.5 新库：蒸馏 P1+P2 批次建库并入 5 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜11→10 库映射见 ctf-wp 采集规划 §4.4"
 ---
@@ -26,6 +27,11 @@ changelog:
 3. [16 字符字母表 Vigenère（b16 前置 + 逐位独立密钥爆破）](#16-字符字母表-vigenèreb16-前置-逐位独立密钥爆破)（verified）
 4. [排版 Bacon 密码（斜体/正体交替 5bit）](#排版-bacon-密码斜体正体交替-5bit)（verified）
 5. [自改写字节码 VM 谐振编程（三层变换 + 精确周期预算）](#自改写字节码-vm-谐振编程三层变换-精确周期预算)（inconclusive）
+6. [3-gram 间距定钥长 + base64 结构 oracle 逐位破 Vigenère](#3-gram-间距定钥长-base64-结构-oracle-逐位破-vigenère)（hypothesis）
+7. [JSON 洋葱 op 指令驱动递归剥层（map/gzip/b64/xor/rev）](#json-洋葱-op-指令驱动递归剥层mapgzipb64xorrev)（hypothesis）
+8. [摩斯无分隔符回溯分割（字典约束穷举）](#摩斯无分隔符回溯分割字典约束穷举)（hypothesis）
+9. [PyPI 版本考古 + 七层编码链（b32→b64→gzip→binary→binary→hex→b85）](#pypi-版本考古-七层编码链b32b64gzipbinarybinaryhexb85)（hypothesis）
+10. [PE 头三处修复救活废件（Machine/OEP/段名 UPX0-1）](#pe-头三处修复救活废件machineoep段名-upx0-1)（hypothesis）
 
 ### 自定义字母表 base64（内存 dump 定位表）
 - **分层**：困难档·单点
@@ -91,3 +97,48 @@ changelog:
 | # | 日期 | 环境/靶场 | 命令或脚本 | 裁决词 | 工件路径 | 备注 |
 |---|---|---|---|---|---|---|
 | 1 | 2026-10-30 | 本机 Python3.12 | r5-astrolabe-probe2.py + r45-gslab-astrolabe-partial.py（数学核心部分复算） | INCONCLUSIVE | shared/wtf-reflight-evidence-20261030/r45-gslab-astrolabe-partial.log | A 接手轮亲复跑全复现；附件 ouroboros.7z 入库后可续跑端到端 |
+
+### 3-gram 间距定钥长 + base64 结构 oracle 逐位破 Vigenère
+- **分层**：困难·单点
+- **假设**：MMACTF vigenere 为重复密钥古典替换：重复 3-gram 出现间距的 GCD 给出密钥长 12；每列单表替换可用「字符平移后整段须为合法 base64 明文」作硬约束 oracle——每列 256 个平移量中合法者唯一，逐列锁定，再按已知明文头（XLF/I8HU/shA6 前缀逐步）拼出全钥。
+- **验证步骤**：1) 统计重复 3-gram 间距取 GCD ⇒ 12；2) 逐列平移试解，以「该列解字符全部落在 base64 字母表 + 解块可 decode 且可打印」过滤候选；3) 部分密钥（XLF 等）回填相邻列用明文连续性约束推进；4) 全钥解出整串。
+- **判定标准**：PASS = 全钥 12 字符解密整段为合法 base64+明文链；FAIL = 用英文空格频谱法（本题字符集非 ASCII 英文文本，空格假设失灵）。
+- **裁决词**：待复跑
+- **来源**：MMACTF 2016 Vigenère｜六星战队（中国）｜raw/github-repos/sixstars/2016_mmactf_h_vigenere.md（间距统计与逐位爆破代码全量在 WP）
+- **关联**：与 [[16 字符字母表 Vigenère（b16 前置 + 逐位独立密钥爆破）]] 同题族升级版（多了 base64 oracle）；与 [[自定义字母表 Base64 变体（IDA 加密函数逆向回推）]] 共享「结构可解性当过滤器」直觉。
+
+### JSON 洋葱 op 指令驱动递归剥层（map/gzip/b64/xor/rev）
+- **分层**：困难·多段链
+- **假设**：jsonion.json 是 1.5MB 自描述洋葱：最外层 JSON 数组元素带 op 字段声明下一层变换（map=字符映射表 mapFrom→mapTo、gzip、b64、nul、xor=重复掩码异或、rev=反转）；写递归 process() 按指令逐层剥开约 9 层，终点 op=flag。
+- **验证步骤**：1) json.loads 读首层取 op；2) 按分派表执行 map（str.maketrans）/gzip.decompress(b64decode)/xor（掩码循环扩展）/rev；3) 递归直至 op==flag 打印；4) 各层字节数日志佐证收敛。
+- **判定标准**：PASS = 递归全程无异常且终点取到 flag；FAIL = 手工逐层（gzip 后二进制无 op 提示易迷路）或 map 表不一一对应抛 KeyError。
+- **裁决词**：待复跑
+- **来源**：HackVent 2017 Dec 9 JSONion｜Shiltemann (Galaxians)｜raw/github-repos/shiltemann/2017_hackvent_h_readme.md（递归解洋葱代码全量在 WP）
+- **关联**：与 [[补条建议：编码套娃链识别与解链——链头数字标记密码类型]] 同族「自描述编码链」；gzip 层与 [[ZFS 删除队列与快照恢复（lz4 压缩剥层）]] 共享压缩剥层手法。
+
+### 摩斯无分隔符回溯分割（字典约束穷举）
+- **分层**：困难·单点
+- **假设**：crypto100 只给连续点划流（无字符/单词分隔）：摩斯树非前缀唯一，分割歧义须靠字典约束——从串首开始回溯，每步取 1-4 位的摩斯码必须命中字母/数字表，单词边界再以目标词表过滤，最终唯一解为口令。（方法论重构注记：原题初版实际不可解——组织者 gist 解码器+数字字典产生约 2000 万 md5 候选未收敛，11 小时后承认出错并换发带空格分隔版本；本条将该方法重构为可收敛的字典约束回溯。）
+- **验证步骤**：1) 建摩斯码表与反查字典；2) 回溯搜索所有合法字母分割；3) 对每个分割结果做词表匹配打分；4) 唯一高分解即口令（验证其满足题面语义）。
+- **判定标准**：PASS = 对带分隔符版本直接解码验证口令；对无分隔符版本验证候选规模量级（海量即符合原文记录，不以收敛为判据）；FAIL = 贪心取最长码（前缀歧义直接错位）或误以「无分隔版应收敛」自责方法。
+- **裁决词**：待复跑
+- **来源**：DCTF Finals 2015 crypto100｜p4 (波兰战队)｜raw/github-repos/p4/2015_dctffinals_h_crypto100.md（原版解法尝试与换题记录在 WP，修改代码未贴）
+- **关联**：与 [[时间倒放摩尔斯（整段倒放·符号序反转）]] 同域无分隔变体；回溯分割与 [[迷宫染色 QR 修复（非白即黑 + 邻接反色）]] 共享「约束空间剪枝搜索」。
+
+### PyPI 版本考古 + 七层编码链（b32→b64→gzip→binary→binary→hex→b85）
+- **分层**：困难·多段链
+- **假设**：spentalkux 玩具包是编码链载体：最新版只有全息废话，图片提示 look back into the past——PyPI 历史版本 0.9 才是真身；其 base64 源解开后给出 7 层链（base32→base64→gzip→binary→binary→hex→base85），每层产物形态可嗅探逐层解。
+- **验证步骤**：1) pip download spentalkux==0.9 或 PyPI 页取旧版；2) base64 解码得 go_away_msgs 与密文；3) 按层嗅探（b32 字母表/64 头/魔数 1f8b/01 串/0x 串/b85 字母表）逐层解；4) 末端得 flag。
+- **判定标准**：PASS = 七层全自动脚本解出 flag；FAIL = 停在新版源码找逻辑（新版本是红鲱鱼，无解链）。
+- **裁决词**：待复跑
+- **来源**：AwesomeCTF 2020 Spentalkux｜Adrien Poirrier (Q C)｜raw/github-repos/apoirrier/2020_awesomectf_h_spentalkux.md（全链解码脚本在 WP）
+- **关联**：与 [[补条建议：编码套娃链识别与解链——链头数字标记密码类型]] 同族（本条靠形态嗅探而非链头标记）；版本考古与 [[git 历史考古取旗（log 提交信息 / blame 作者 / 丢失提交找回）]] 共享「历史版本当真身」直觉。
+
+### PE 头三处修复救活废件（Machine/OEP/段名 UPX0-1）
+- **分层**：困难·单点
+- **假设**：rev04.exe 被人为损坏头部打不开（DOS/PE 头本身完好）：① Machine 位深不符（32 位代码编成 PE64，UPX 3.08 壳特征佐证 32 位）；② Entrypoint/OEP 错误；③ UPX0/UPX1 段名被改（壳识别失败）。三处补正后正常加载脱壳分析。
+- **验证步骤**：1) 按代码特征与 UPX 3.08 壳特征定 32 位、改 Machine；2) 按 UPX stub 特征恢复 Entrypoint/OEP；3) 段名改回 UPX0/UPX1；4) upx -d 脱壳后 IDA 分析还原算法。
+- **判定标准**：PASS = 三处修复后可执行/可脱壳；FAIL = 漏修 OEP 或段名（单修 Machine 依旧拒载/脱壳失败）。
+- **裁决词**：待复跑
+- **来源**：WhiteHat GrandPrix 2018 rev04｜perfect blue (战队)｜raw/github-repos/perfectblue/2018_whitehat-grandprix_h_rev04.md（三处损坏点与 UPX 3.08 佐证在 WP）
+- **关联**：与 [[OLE/Word97 头修复 + foremost 嵌套提取]] 同族「容器头修复前置」；脱壳后分析与 [[密码算法大礼包识别（常量指纹 + F5 恢复 + SM4 收官）]] 的常量指纹法互补。

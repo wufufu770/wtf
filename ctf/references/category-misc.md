@@ -4,7 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "CTF-wiki（misc）、0rangec3t/Black-cat（假设-证据范式）、巨人项目 OSINT 实战记录（2026-10）、M2 实测复跑"
 changelog:
-  - "[2026-10-29] v0.5：蒸馏 P1+P2 批次并入 6 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜源：ctf-corpus/distill 候选池（candidates.jsonl）+ distill/pilot/01-蒸馏批次报告-P2-20261029.md"
+  - "[2026-10-30] v0.6：修正批同步 1 处（46 修正批涉已入库条目 D80，pilot/04-修正简报）｜P3 批次无 misc 分区，条目数不变"  - "[2026-10-29] v0.5：蒸馏 P1+P2 批次并入 6 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜源：ctf-corpus/distill 候选池（candidates.jsonl）+ distill/pilot/01-蒸馏批次报告-P2-20261029.md"
   - "[2026-10-15] 初始空壳，等待首个回流条目"
   - "[2026-10-15] v0.2：条目模板升级为五段式假设条目 + 机器可校验裁决词（REFLIGHT 回流协议，见 ../../shared/REFLIGHT.md）"
   - "[2026-10-15] v0.3：M2 填充 4 条（verified 1 / hypothesis 3）"
@@ -126,7 +126,7 @@ changelog:
 - **验证步骤**：1) 盘点可用字符集与被禁关键字；2) 枚举环境/位置变量找到可切出目标字符者；3) 切片拼接 `cat`/`nl` 等读命令；4) `${IFS}` 作分隔执行。
 - **判定标准**：PASS = 拼出命令读出旗；FAIL = 变量原料缺字符 → 试 `set` 内置枚举全部 shell 变量再选。
 - **裁决词**：待复跑
-- **来源**：Trend Micro CTF 2023 East Quals powerfulshell（misc 200p/155 解）｜raydiv0（Asia rad!cal）｜raw/github-repos/raydiv0/2023_trendmicro_h_powerfulshell.md（全套变量切片构造在 WP，本地 bash 3.2 可重放）
+- **来源**：Hackergame 2024 PowerfulShell｜USTC-Hackergame（官方+选手）｜raw/github-repos/hackergame2024/2024_hackergame_h_powerfulshell.md（全套变量切片构造在 WP，本地 bash 3.2 可重放）
 - **关联**：同「受限环境构造」族 [[只读文件系统的 nc 代理流式投递]]——关键差异 = 该条绕文件系统限制、本条绕字符集限制。
 - **陷阱备注**：出题者意在 jailbreak 但元字符/字母大量放行，非预期用 `head`/`tail` 等命令直接读——边界说明「先确认禁令的实际覆盖面再谈逃逸」。
 

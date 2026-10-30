@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "ctf-corpus 蒸馏层 P1+P2 批次（distill/by-category/mobile），原始 WP 见 ctf-corpus/raw/ 与 meta/register.jsonl"
 changelog:
+  - "[2026-10-30] v0.6：蒸馏 P3 批次并入 4 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/mobile/p3-20261029.md + candidates.jsonl（P3 批次报告 02） + 修正批同步（46 修正批涉已入库条目，pilot/04-修正简报）（本文件 2 处外科式：D100 推断补全标注 / D101 表述对齐原文）"
   - "[2026-10-30] 回流复跑轮：7 条全裁决（InjuredAndroid PASS——开源全源码四数据面全证+firebase 双端点活体 200；其余 6 条 INCONCLUSIVE 缺 APK 原件/物理镜像/RE 工具链，缺口清单入条目）；证据归档 shared/wtf-reflight-evidence-20261030/"
   - "[2026-10-29] v0.5 新库：蒸馏 P1+P2 批次建库并入 7 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜11→10 库映射见 ctf-wp 采集规划 §4.4"
 ---
@@ -28,6 +29,10 @@ changelog:
 5. [Android 训练靶场全链路（jadx 审查 → sqlite → 远程端点）](#android-训练靶场全链路jadx-审查-sqlite-远程端点)（verified）
 6. [Android 物理镜像取证（app 私有数据雕刻 +「UI 锁≠加密」）](#android-物理镜像取证app-私有数据雕刻-ui-锁加密)（inconclusive）
 7. [APK JNI 原生库逆向（Ghidra 签名修复 + 双组解密）](#apk-jni-原生库逆向ghidra-签名修复-双组解密)（inconclusive）
+8. [dex2jar + jd-gui 反编译直取 rot13 比对串](#dex2jar-jd-gui-反编译直取-rot13-比对串)（hypothesis）
+9. [key.db 明文密钥 + so 层 DES + 反调试对抗（PNG 隐写收官）](#keydb-明文密钥-so-层-des-反调试对抗png-隐写收官)（hypothesis）
+10. [多 APK 静态分析流水线（dex2jar→jd-gui/Luyten 检索式下钻）](#多-apk-静态分析流水线dex2jarjd-guiluyten-检索式下钻)（hypothesis）
+11. [Flutter kernel_blob 源码级逆向（Dart 快照字符串考古）](#flutter-kernel_blob-源码级逆向dart-快照字符串考古)（hypothesis）
 
 ### Xamarin AOT apk 提取 .NET PE（libmonodroid bundle）
 - **分层**：超级难档·失败样本/陷阱
@@ -97,11 +102,11 @@ changelog:
 | 1 | 2026-10-30 | 本机（git clone B3nac/InjuredAndroid --depth 1 成功；全源码审计等效且强于 jadx 反编译面） | mobile5-injuredandroid-replay.py（四数据面独立取证 + firebase 活体探测） | PASS | shared/wtf-reflight-evidence-20261030/mobile5-injuredandroid-replay.log | ①Java 硬编码 F1ag_0n3；②资源名 base64 cmVzb3VyY2VzX3lv→F1ag_thr33；③sqlite 表 Thisisatest 内嵌 MD5=2ab96390c7dbe3439de74d0c9b0b1767 本地破解 hunter2；④rot47 隐藏 URL 解码→https://injuredandroid.firebaseio.com/sqlite.json 活体 HTTP 200 返回 "S3V3N_11"、/f1ag-pa55.json 200 返回 "hunter2"。注：App 交互层 18 关未在模拟器重放（环境无 Android 运行时）——按「数据存放面清单」核心主张裁决，交互完备性留痕 |
 ### Android 物理镜像取证（app 私有数据雕刻 +「UI 锁≠加密」）
 - **分层**：困难档·复合链
-- **假设**：3.5GB flash 物理镜像中笔记 app（protectedtext）声称 PIN 加密，实际 PIN 只锁 UI、db 内容明文落盘 ⇒ 在镜像中 grep 包名/关键 JSON 字段（`"encrypted":false`）→ 雕刻出 notes 表内容 → 直接读旗。
-- **验证步骤**：1) strings/photorec 搜 `com.protectedtext.android` 数据痕；2) 定位 db/JSON 分片；3) 提取 note 字段；4) 按 app 数据格式还原旗。
+- **假设**：3.5GB flash 物理镜像中笔记 app（protectedtext）声称 PIN 加密，实际 PIN 只锁 UI、Notes 表 IS_ENCRYPTED 列标记未加密（AES 静态密钥可逆）⇒ strings 镜像定位包名 + sqlite Notes 表取证 → 雕刻出 notes 内容 → 直接读旗。
+- **验证步骤**：1) strings/photorec 搜 `com.protectedtext.android` 数据痕；2) sqlite Notes 表 IS_ENCRYPTED 列 + strings 镜像定位；3) 提取 note 字段；4) 按 app 数据格式还原旗。
 - **判定标准**：PASS = 明文笔记含旗；FAIL = 分片残缺 → 按 JSON 结构续接。
 - **裁决词**：INCONCLUSIVE
-- **缺口清单**：缺 3.5GB flash 物理镜像原件（corpus raw 仅 WP 文本，镜像从未公开分发）；无 Android 取证工具链（photorec/strings 可行但无原始镜像输入）。雕刻与 JSON 痕迹检索法无法重走。
+- **缺口清单**：缺 3.5GB flash 物理镜像原件（corpus raw 仅 WP 文本，镜像从未公开分发）；无 Android 取证工具链（photorec/strings 可行但无原始镜像输入）。雕刻与 sqlite 表取证法无法重走。
 - **来源**：Insomni'hack 2022 AndroNotes（mobile/for）｜p4 (波兰战队)｜raw/github-repos/p4/2022_insomnihack_h_andronotes.md（镜像检索路径与 JSON 痕迹在 WP）
 - **关联**：「自造防护≠标准语义」的移动版证据——与 [[STG-P03 自造防护≠标准语义——checksec 报告须验实现]] 同纪律（PIN 拦 UI 不拦数据层）。
 ### 复跑记录（append-only）
@@ -111,7 +116,7 @@ changelog:
 ### APK JNI 原生库逆向（Ghidra 签名修复 + 双组解密）
 - **分层**：困难档·复合链
 - **假设**：校验逻辑在 `libexterminate.so`（按钮 on-click 是外部合成 lambda → JNI 调用）⇒ Ghidra 修 JNI 函数签名（动态注册须从 RegisterNatives 交叉定位）→ 逆自定义解密例程 → 对两组密文分别解密（注意组序，解错组会错认失败）→ 拼旗。
-- **验证步骤**：1) jadx 找 native 方法声明；2) Ghidra 修签名定 JNI 入口；3) 读解密函数（密钥/分组序）；4) 两组各解并按正确顺序拼接。
+- **验证步骤**：1) jadx 找 native 方法声明；2) Ghidra 修签名定 JNI 入口（推断补全：原文为 JNIAnalyzer 插件自动修复，未演示交叉定位过程）；3) 读解密函数（密钥/分组序）；4) 两组各解并按正确顺序拼接。
 - **判定标准**：PASS = 解密串成旗；FAIL = 拼不出 → 交换两组顺序再试（作者亲踩：块序混换险些误判无解）。
 - **裁决词**：INCONCLUSIVE
 - **缺口清单**：缺 APK 原件（含 libexterminate.so，corpus raw 仅战队博客 WP 文本）；本机无 Ghidra/jadx 工具链。RegisterNatives 交叉定位与双组解密复算无法重走。
@@ -121,3 +126,39 @@ changelog:
 | # | 日期 | 环境/靶场 | 命令或脚本 | 裁决词 | 工件路径 | 备注 |
 |---|---|---|---|---|---|---|
 | 1 | 2026-10-30 | 素材核查（corpus raw + 附件源存活探测） | raw 仓储检视 + 附件源存活检查 | INCONCLUSIVE | shared/wtf-reflight-evidence-20261030/rerun-A-20261030.log | apk/so 入库+Ghidra 就位后可续跑；块序教训（作者亲踩）在 WP 记录自洽 |
+
+### dex2jar + jd-gui 反编译直取 rot13 比对串
+- **分层**：困难·单点
+- **假设**：webdroid.apk 的校验逻辑就在 dex 层而非 so：dex2apk（dex2jar）转 jar 后 jd-gui 看 Java 源——关键函数把输入 rot13 后与常量串比较，其余大量函数是干扰；直接 rot13 常量串即得 flag（apk 逆向最小工具链样板）。
+- **验证步骤**：1) unzip apk 取 classes.dex；2) d2j-dex2jar + jd-gui 打开 jar；3) 搜索 equals/compare 类调用定位比对函数；4) 常量串 rot13 解码。
+- **判定标准**：PASS = 一轮定位比对函数且 rot13 出 flag 格式；FAIL = 花时间逆干扰函数（大量无用 wrapper）。
+- **裁决词**：待复跑
+- **来源**：ISG 2015 webdroid｜六星战队（中国）｜raw/github-repos/sixstars/2015_isg_h_isg-writeup.md（定位思路在 WP Reverse 段）
+- **关联**：与 [[Android 训练靶场全链路（jadx 审查 → sqlite → 远程端点）]] 同族 dex 层定位优先；rot13 与 [[hex 文本修复 JPEG + steghide 双层 + morse/ROT13]] 的 ROT13 支线互补。
+
+### key.db 明文密钥 + so 层 DES + 反调试对抗（PNG 隐写收官）
+- **分层**：困难·多段链
+- **假设**：adroid2 登录逻辑：用 key.db（SQLite 表 key，值 zctf2016）加密 username+passwd 与 flag.bin 比对；解出伪 flag 后（zctf{Notthis}）提示继续：libJNIclass.so 里 DES_Decrypt 用 passwd 解 top（程序内常量）+ bottom（assets 文件），产物是 PNG——stegsolve 调通道出真 flag。动态调试须先 patch so 内 ptrace 与 Java 层 3500ms 自杀定时器。
+- **验证步骤**：1) sqlite3 打 key.db 取密钥；2) 解 flag.bin 得伪旗与 passwd 线索；3) patch ptrace/定时器后调试或外部程序调 DES_Decrypt；4) 解密产物认 PNG 头；5) stegsolve 通道浏览取旗。
+- **判定标准**：PASS = 四层全通取得真旗；FAIL = 把 zctf{Notthis} 当终点（明示诱饵）或标准 DES 库直接解（实现有魔改，须走原函数）。
+- **裁决词**：待复跑
+- **来源**：ZCTF 2016 adroid2｜六星战队（中国）｜raw/github-repos/sixstars/2016_zctf_h_writeup.md（全链描述在 WP）
+- **关联**：与 [[APK JNI 原生库逆向（Ghidra 签名修复 + 双组解密）]] 同族 so 层加密还原；反调试 patch 与 [[Windows 逆向前置条件 patch（参数校验 + PEB 反调试 #DE）]] 共享「先除自杀再调试」纪律；PNG 收官与 [[GIF 近黑帧对 XOR 隐写（缺 finder QR 修复）]] 相邻。
+
+### 多 APK 静态分析流水线（dex2jar→jd-gui/Luyten 检索式下钻）
+- **分层**：困难·多段链
+- **假设**：h1-702 全套 mobile 题共用「APK=压缩包」心智模型：解包后 classes.dex → dex2jar → jd-gui/Luyten 看 Java；关键串（flag part、Log.d 标签、方法名）用 IDE 全局检索逐层下钻，checkFlag 类常量拼装即出三段 flag——流水线本身可复制到任意无壳 APK。
+- **验证步骤**：1) 7z 解 APK 看结构（classes.dex/resources）；2) dex2jar 转换；3) jd-gui 打开检索 flag/Log/equals；4) 按三题各自的 check 函数还原比对常量；5) 拼旗验证。
+- **判定标准**：PASS = 三题全出旗且每题 ≤30 分钟流水线工时；FAIL = 上真机动态调试起步（静态即可解，效率低）。
+- **裁决词**：待复跑
+- **来源**：h1-702 CTF 2018 voidmercy 三题合集｜perfect blue (战队)｜raw/github-repos/perfectblue/2018_h1-702-ctf_h_voidmercy.md（三题全程与检索词在 WP）
+- **关联**：与 [[APK JNI 原生库逆向（Ghidra 签名修复 + 双组解密）]] 互为静态/so 两条腿；与 [[dex2jar + jd-gui 反编译直取 rot13 比对串]] 同工具链不同深度（本条为多题流水线化）。
+
+### Flutter kernel_blob 源码级逆向（Dart 快照字符串考古）
+- **分层**：困难·多段链
+- **假设**：locksmith APK 为 Flutter 应用：smali 层只是启动壳，业务逻辑在 assets/flutter_assets/kernel_blob.bin（Dart kernel 快照）；xxd+grep 在其中直接可见 file:/// 源路径与近乎源码的字符串（token.dart/login 逻辑/URL 常量），据此还原 login(seed,password) 协议与后续 API 调用序列，转 HTTP 客户端复现拿密室蓝图。
+- **验证步骤**：1) apktool d 解包；2) xxd -u assets/flutter_assets/kernel_blob.bin 检索 main.dart/token.dart 上下文；3) 还原 login 参数与加密字段语义；4) requests 复现登录与后续端点取资料。
+- **判定标准**：PASS = 按 WP 复现登录拿到目标资料；FAIL = 只逆 smali（Flutter 业务不在 Java 层，拿不到协议细节）。
+- **裁决词**：待复跑
+- **来源**：Mossad CTF 2019 Challenge #1｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2019_challenge1-md_h_challenge1.md（kernel_blob 提取过程与 token.dart 源在 WP）
+- **关联**：与 [[Android Mono 运行时反混淆（魔改 opcode 表 + ILSpy 还原）]] 同族「非 Java 运行时的 APK 业务逆向」；字符串考古与 [[多类型泥沙文件隐私泄露普查（strings 降序 + whisper 语音转写）]] 共享 strings 优先直觉。

@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "CTF-wiki（pwn 章节）、0rangec3t/Black-cat 五段式范式、M2 实测复跑（2026-10-15）"
 changelog:
+  - "[2026-10-30] v0.6：蒸馏 P3 批次并入 6 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/pwn/p3-20261029.md + candidates.jsonl（P3 批次报告 02） + 修正批同步（46 修正批涉已入库条目，pilot/04-修正简报）（本文件 9 处）"
   - "[2026-10-29] v0.5：蒸馏 P1+P2 批次并入 15 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜源：ctf-corpus/distill 候选池（candidates.jsonl）+ distill/pilot/01-蒸馏批次报告-P2-20261029.md"
   - "[2026-10-15] 初始空壳，等待首个回流条目"
   - "[2026-10-15] v0.2：条目模板升级为五段式假设条目 + 机器可校验裁决词（REFLIGHT 回流协议，见 ../../shared/REFLIGHT.md）"
@@ -46,6 +47,12 @@ changelog:
 17. [栈溢出 GOT 改写 + 全局字符串作参（Unix socket 报送）](#栈溢出-got-改写-全局字符串作参unix-socket-报送)（hypothesis）
 18. [\0 截断对抗 ROP（pop4ret 跳板 + dynELF 补 libc）](#0-截断对抗-roppop4ret-跳板-dynelf-补-libc)（hypothesis）
 19. [相邻变量覆写改认证标志（authenticated 旁路）](#相邻变量覆写改认证标志authenticated-旁路)（hypothesis）
+20. [假 cookie 猜想排除 + off-by-one 造 unlink（printf 泄漏走偏）](#假-cookie-猜想排除-off-by-one-造-unlinkprintf-泄漏走偏)（hypothesis）
+21. [top chunk 随机化 + calloc 清零下的 unsorted bin 泄漏（error 路径触发 malloc_hook）](#top-chunk-随机化-calloc-清零下的-unsorted-bin-泄漏error-路径触发-malloc_hook)（hypothesis）
+22. [off-by-null 溢出打 BSS 指针数组（money 连续添加 + 索引无校验）](#off-by-null-溢出打-bss-指针数组money-连续添加-索引无校验)（hypothesis）
+23. [stdout FILE 结构改写打 tcache（write_base 定点 + 部分覆写改 size）](#stdout-file-结构改写打-tcachewrite_base-定点-部分覆写改-size)（hypothesis）
+24. [括号语言深度语义推理（absorb/combine 形式文法自动化）](#括号语言深度语义推理absorbcombine-形式文法自动化)（hypothesis）
+25. [SUID 相对设备路径 + IOCTL 失败信息泄露（dev/console 缺斜杠）](#suid-相对设备路径-ioctl-失败信息泄露devconsole-缺斜杠)（hypothesis）
 
 ### 格式化字符串 %p 泄露栈数据
 - **假设**：程序把用户输入直接作为 printf 第一参数（`printf(user_input)`）→ 输入 `%p %p %p...` 可逐个泄露栈上数据（返回地址/canary/栈指针），第 6 个 `%p` 起越过 printf 自身寄存器参数进入调用者栈帧。
@@ -120,7 +127,7 @@ changelog:
 - **验证步骤**：1) 逆目标函数；2) 与泄露源码同名函数 diff；3) 差异处判修复语义；4) 沿差异点找同类未修调用。
 - **判定标准**：PASS = 在源码-二进制差异处找到可达漏洞；FAIL = 源码与二进制完全对齐（可直接读源码省时）。
 - **裁决词**：待复跑
-- **来源**：同上 P90 Rush B（"We could have saved a lot of time by just opening the binary up in IDA"——比赛环境没带 IDA 转而信泄露源码是直接损失原因）
+- **来源**：Real World CTF 2018 Quals P90 Rush B｜perfect blue｜raw/github-repos/perfectblue/2018_realworldctf_x_p90-rush-b.md（"We could have saved a lot of time by just opening the binary up in IDA"——比赛环境没带 IDA 转而信泄露源码是直接损失原因）
 
 ### 栈溢出活跃元数据零填充与循环计数收敛
 - **分层**：超级难档·失败样本/陷阱
@@ -128,7 +135,7 @@ changelog:
 - **验证步骤**：1) 引用追踪定位溢出后仍被读取的栈槽；2) payload 对应区段置 0 / 还原原值；3) 循环计数字段调至最小迭代数；4) 前置检查（如 fileLen 上限）用尾部零填充绕过；5) ret 前保留必要指针，ROP 接管。
 - **判定标准**：PASS = 程序语义保持稳定到达 EIP 控制点；FAIL = 崩溃在劫持前 → 回读崩溃点栈槽继续修正（迭代收敛）。
 - **裁决词**：待复跑
-- **来源**：P90 Rush B（"a lot of metadata on the stack that is still being used"→零填充；"nCentralDirectoryEntries_Total holds the number of files"→ 置 2 即溢出+退出循环）
+- **来源**：Real World CTF 2018 Quals P90 Rush B｜perfect blue｜raw/github-repos/perfectblue/2018_realworldctf_x_p90-rush-b.md（"a lot of metadata on the stack that is still being used"→零填充；"nCentralDirectoryEntries_Total holds the number of files"→ 置 2 即溢出+退出循环）
 - **陷阱备注**：0x41414141 填充是默认习惯，活跃元数据场景它是崩溃源——先问「这块栈后面还被谁读」。
 
 ### rand() 未播种的服务端门禁（SSL 回显可预测）
@@ -146,7 +153,7 @@ changelog:
 - **验证步骤**：1) `stty -echo` 关回显（否则回显污染流）；2) base64 分块流式传（规避 nc stdin 关闭时机问题）；3) 特殊字节损坏（如 `\x10` 变 `\x16`）用 `| xxd -c1` 修正；4) 本地端同步解 base64 写目标 socket。
 - **判定标准**：PASS = 代理完成完整 TLS 会话并收旗；FAIL = 字节流损坏 → 三查（回显污染 → -echo；stdin 提前关闭 → while-read 循环；坏字节 → 换 \xNN 转义）。
 - **裁决词**：待复跑
-- **来源**：babyshell "Part 2: The struggle"（problems #1/#2/#3 逐条纠错记录——p4 明言 "skipping here loooong hours spent on debugging"）——**典型多步失败-修正链，失败样本密度最高的正文段之一**
+- **来源**：Dragon CTF 2020 babyshell｜p4｜raw/github-repos/p4/2020_dragonctf_x_babyshell.md（"Part 2: The struggle" problems #1/#2/#3 逐条纠错记录——p4 明言 "skipping here loooong hours spent on debugging"）——**典型多步失败-修正链，失败样本密度最高的正文段之一**
 
 ### unlink 利用（P→P-0x18 自写指针 + GOT 覆写）
 - **分层**：困难档·经典原语
@@ -154,7 +161,7 @@ changelog:
 - **验证步骤**：1) 定位指向堆的全局指针 P；2) 溢出写假 chunk（prev_size/size=F 地/”fd=P-0x18, bk=P-0x10"）；3) 触发向后合并（改下一块 prev_inuse=0）；4) unlink 自洽校验过 → `box[i]` 读回；5) 二级写覆盖 GOT。
 - **判定标准**：PASS = unlink 自洽通过且 GOT 覆写后拿到 shell；FAIL = libc 2.26+（safe-unlinking 检查差异）→ 转 [[栈溢出偏移定位（cyclic 模式）]] 之外的 off-by-null / tcache 路线。
 - **裁决词**：待复跑
-- **来源**：kxctf 2017 Puzzle 4（pwn）｜六星战队（sixstars）｜raw/github-repos/sixstars/2017_kxctf_h_4.md（完整 exp 与 unlink 布局在 WP；本地同版 libc 可重放）
+- **来源**：kxctf 2017 Puzzle 4（pwn）｜六星战队（sixstars）｜raw/github-repos/sixstars/2017_kxctf_h_solve.md（完整 exp 与 unlink 布局在 WP；本地同版 libc 可重放）
 - **陷阱备注**：题设 PIE——需先经随机数预测（见下条）拿 .bss 段堆指针地址，unlink 的 P 才能算出。
 
 ### glibc rand() 状态恢复（z3 约束求解 31 状态字）
@@ -163,7 +170,7 @@ changelog:
 - **验证步骤**：1) 采集错误回显序列（≥93）；2) 按 glibc TYPE_3 递推建立 SMT 约束；3) solver 解状态；4) 预测下一次输出对拍；5) 用预测换 seed/.bss 地址。
 - **判定标准**：PASS = 预测值与实际逐次一致并换得地址泄露；FAIL = 输出不足 93 → 继续采集；版本差异（musl/旧版 libc）→ 重推递推式。
 - **裁决词**：待复跑
-- **来源**：kxctf 2017 Puzzle 4（pwn）｜六星战队（sixstars）｜raw/github-repos/sixstars/2017_kxctf_h_4.md（z3 脚本骨架在 WP；本地 C 程序可完整复现）
+- **来源**：kxctf 2017 Puzzle 4（pwn）｜六星战队（sixstars）｜raw/github-repos/sixstars/2017_kxctf_h_solve.md（z3 脚本骨架在 WP；本地 C 程序可完整复现）
 - **关联**：知识锚 = 上条 unlink（同一题双阶段）；与 [[格式化字符串 %p 泄露栈数据]] 同属「先泄露再利用」族——区别在泄露源是伪随机输出流。
 
 ### PIE 部分覆盖（页内低位改写跳转 + 固定地址跳板）
@@ -172,7 +179,7 @@ changelog:
 - **验证步骤**：1) 测溢出可用字节数（返回地址偏移后余量）；2) 计算目标/落点同页差；3) 覆写低 2 字节（小端）；4) 多次运行统计命中率；5) vsyscall 入口选 `0xffffffffff600000`（入口而非 +9 的指令中段）。
 - **判定标准**：PASS = 概率命中拿到 shell/旗；FAIL = 窗口不含目标 → 需先泄露（%p/puts）再全量覆写；vsyscall 被模拟层禁止（`vsyscall=none`）→ 转其他固定映射。
 - **裁决词**：待复跑
-- **来源**：hack.lu 2015 hackme｜sixstars 仓库（wp2 行）｜raw/github-repos/sixstars/2015_hacklu_h_hackme.md（源码+概率分析在 WP；本地同参数 gcc 可复现）；姊妹证据：SunshineCTF 2019 Return_To_Mania（welcome 地址 printf 泄露 + 低 2 字节跳 mania，同页内差 0x90）｜Dvd848（S1 扩容源）
+- **来源**：hack.lu 2015 hackme｜sixstars 仓库（wp2 行）｜raw/github-repos/sixstars/2015_hack-lu_h_writeup.md（源码+概率分析在 WP；本地同参数 gcc 可复现）；姊妹证据：SunshineCTF 2019 Return_To_Mania（welcome 地址 printf 泄露 + 低 2 字节跳 mania，同页内差 0x90）｜Dvd848（S1 扩容源）
 - **陷阱备注**：部分覆盖本质是用「放弃高位」换「免泄露」——两案例分别走 1/16 概率与固定跳板两条补偿路径。
 
 ### VM 寄存器索引截断越界（16-bit 无符号折返 + seccomp 打父进程）
@@ -181,7 +188,7 @@ changelog:
 - **验证步骤**：1) 定位 VM 栈基址与寄存器宽；2) readstack/write 越界偏移试算（泄露 PIE@0x68、libc@0xa8）；3) 改子进程返回走 sigreturn ROP；4) 构造共享内存 2 字节尺寸 + ROP 内容；5) 父进程 memcpy 触发。
 - **判定标准**：PASS = 父进程接管 shell；FAIL = 尺寸边界被截断（0x40 一类对齐检查）→ 换 0x90 等非 2 次幂尺寸（WP 实测卡点）。
 - **裁决词**：待复跑
-- **来源**：MidnightSun CTF 2019 Quals hfs-vm2（pwn 660p，14 solved）｜perfect blue（战队）｜raw/github-repos/perfect-blue/*.md（VM 指令语义与两段 exp 在 WP；需自建父子进程同构）
+- **来源**：MidnightSun CTF 2019 Quals hfs-vm2（pwn 660p，14 solved）｜perfect blue（战队）｜raw/github-repos/perfectblue/2019_midnightsun-ctf-quals_h_hfs-vm2.md（VM 指令语义与两段 exp 在 WP；需自建父子进程同构）
 - **陷阱备注**：WP 记录卡点——memcpy 尺寸 0x40 反复失败、0x90 成功：非对齐尺寸的边界行为要用实测而不是猜（典型「环境细节反直觉」失败样本）。
 
 ### 自研分配器 1 字节 footer 覆盖（块链伪造 + GOT 覆写）
@@ -190,7 +197,7 @@ changelog:
 - **验证步骤**：1) 读 mm.c 确认 header/footer 语义与双向遍历点；2) 构造 1 字节覆盖值（size 低位+used bit）；3) 触发 free 使 coalesce 吃到伪造 footer；4) 用重叠块写函数指针；5) 调 strcmp('...')→system('/bin/sh')。
 - **判定标准**：PASS = 拿 shell；FAIL = footer 校验（size 一致性/对齐）拦下 → 转正向遍历面的溢出。
 - **裁决词**：待复跑
-- **来源**：TUCTF 2017 Temple（pwn 500p，49 solved）｜cartoon-raccoon｜raw/github-repos/*/2017_tuctf_h_temple-500.md（mm.c 与利用序列在 WP；本地可全重放）
+- **来源**：TUCTF 2017 Temple（pwn 500p，49 solved）｜perfect blue (战队)｜raw/github-repos/perfectblue/2017_tuctf_h_temple-500.md（mm.c 与利用序列在 WP；本地可全重放）
 
 ### 整数溢出尺寸 + realloc 一致性检查逃逸（失败样本）
 - **分层**：困难档·失败样本/陷阱（**refuted 优先回流**）
@@ -198,7 +205,7 @@ changelog:
 - **验证步骤**：1) 复现整数溢出改写点；2) 假 chunk + unlink 尝试并记录被拦检查清单；3) 复测「realloc 失败→返回极小地址/大地址」路径的可用写原语；4) GOT 改写收尾。
 - **判定标准**：PASS = 复现「unlink 被检查拦截」与「失败路径成写原语」双记录；FAIL = 环境 libc 无该检查差异 → 记录版本对照。
 - **裁决词**：待复跑
-- **来源**：ISG 2015 dict（pwn）｜六星战队（sixstars）｜raw/github-repos/sixstars/2015_isg_e_dict.md（含完整失败路径与赛后他人解法对照；卡点段为高价值失败样本）
+- **来源**：ISG 2015 dict（pwn）｜六星战队（sixstars）｜raw/github-repos/sixstars/2015_isg_h_writeup.md（含完整失败路径与赛后他人解法对照；卡点段为高价值失败样本）
 - **陷阱备注**：本条知识主体是「检查清单」——malloc/realloc 的 size/used 一致性检查在堆已乱时几乎必然触发，别硬冲 unlink；先枚举「失败返回值能否当写原语用」。
 
 ### 栈溢出 GOT 改写 + 全局字符串作参（Unix socket 报送）
@@ -229,3 +236,57 @@ changelog:
 - **裁决词**：待复跑
 - **来源**：Technion Ducky Debug Duck 2021 Flag_Server（pwn 100p）｜Dvd848（S1 扩容源）｜raw/github-repos/Dvd848/2021_flag-server-md_h_flag-server.md（偏移与 payload 在 WP；本地同构秒级重放）
 - **关联**：与 [[栈溢出活跃元数据零填充与循环计数收敛]] 互补——该条讲「为何会漏填」，本条讲「高防护下最优目标从地址退化为数据标志」。
+
+### 假 cookie 猜想排除 + off-by-one 造 unlink（printf 泄漏走偏）
+- **分层**：困难·多段链
+- **假设**：Gamebox 登录声称随机 cookie 防伪造，但程序自己用 printf 打印了 cookie（可逐条取出对应会话），随机化是假防线；真正漏洞在读取名称时的 off-by-one：可覆写下一 chunk 的 size 字段，与 P2 unlink 经典原语衔接实现任意写。
+- **验证步骤**：1) 读程序流程确认 cookie 由固定文件读出（24B/条）而 printf 直接输出；2) 定位 off-by-one 写点（长度输入差一）；3) 构造 chunk 布局使 size 覆盖进可控 chunk；4) unlink 改 GOT/函数指针收官。
+- **判定标准**：PASS = 链路全通拿到 shell/flag；FAIL = 在猜 cookie 上耗时（假随机陷阱）或 off-by-one 覆盖成非法 size 触发 abort。
+- **裁决词**：待复跑
+- **来源**：强网杯 2018 Gamebox｜六星战队（中国）｜raw/github-repos/sixstars/2018_qiangwangbei_h_qiangwangbei.md（EXP 脚本与 unlink 布局全量在 WP）
+- **关联**：与 [[unlink 利用（P→P-0x18 自写指针 + GOT 覆写）]] 同核心原语；假防线甄别与 [[rand() 未播种的服务端门禁（SSL 回显可预测）]] 共享「先证伪再利用」纪律。
+
+### top chunk 随机化 + calloc 清零下的 unsorted bin 泄漏（error 路径触发 malloc_hook）
+- **分层**：困难·多段链
+- **假设**：babyheap 反常规三件套：初始 top chunk 地址随机化（防 House of Orange 类）+ calloc 申请（清零已用内存，泄不了残留）+ off-by-one 改 size 伪造 chunk 走 unlink；libc 泄漏改走「切分 unsorted bin 把 arena 指针写进可打印 chunk」；最终因可用 gadget 不足，转用触发堆分配 error——libc error 信息函数内部调用 strdup→malloc，间接跳 malloc_hook 上 gadget。
+- **验证步骤**：1) off-by-one 改下一 chunk size 成大块；2) free 造 unsorted bin，申请分割使 main_arena 指针落入可读 chunk 并输出；3) fastbin fd 指向 malloc_hook 附近伪造（对齐 0x7f 检查）；4) 主动触发堆 error 走 strdup 分配路径。
+- **判定标准**：PASS = arena 地址可读且 error 路径成功触发 gadget；FAIL = 直接 malloc 触发（gadget 不可用）或 calloc 清零后仍想拿残留指针。
+- **裁决词**：待复跑
+- **来源**：RCTF 2018 babyheap｜六星战队（中国）｜raw/github-repos/sixstars/2018_rctf_h_rctf2018.md（三阶段思路全量在 WP）
+- **关联**：与 [[unlink 利用（P→P-0x18 自写指针 + GOT 覆写）]] 共享 unlink 原语；unsorted bin 泄漏与 [[stdout FILE 结构改写打 tcache（write_base 定点 + 部分覆写改 size）]] 互为 2.23/2.27 两代 libc 泄漏路线；error 路径触发与 [[相邻变量覆写改认证标志（authenticated 旁路）]]共享「绕过前置条件换触发面」思路。
+
+### off-by-null 溢出打 BSS 指针数组（money 连续添加 + 索引无校验）
+- **分层**：困难·多段链
+- **假设**：shoppingcart 的 edit 存在单 \x00 溢出且索引无边界检查：连续 add money 二十次把 BSS 上指针数组推满，令相邻堆指针以 \x00 截位，实现「指针整体改小」；再借索引负数/超界读与 edit 配合，得到任意地址读写，最终改写 hook/返回地址。
+- **验证步骤**：1) 反汇编确认 edit 写入无长度校验、索引仅 32 位截断；2) 连续 add 20 次排布 BSS 指针；3) edit 触发 off-by-null 覆盖目标指针低字节；4) 用受控指针完成 GOT/hook 改写。
+- **判定标准**：PASS = 任意读写成立并拿到 shell；FAIL = 只用单字节截断当字节溢出用（不成链）或索引检查误判（edit 有 recvuntil 特征可复用内容）。
+- **裁决词**：待复跑
+- **来源**：护网杯 2018 shoppingcart｜六星战队（中国）｜raw/github-repos/sixstars/2018_huwangbei_h_readme.md（完整 EXP 在 WP）
+- **关联**：与 [[自研分配器 1 字节 footer 覆盖（块链伪造 + GOT 覆写）]] 同属一字节溢出原语族；BSS 指针数组目标与 [[相邻变量覆写改认证标志（authenticated 旁路）]]相邻。
+
+### stdout FILE 结构改写打 tcache（write_base 定点 + 部分覆写改 size）
+- **分层**：困难·多段链
+- **假设**：three 限申请 3 个堆块且 glibc 2.27 tcache 在位、double free 恰好够不到：改打 stdout 结构体——先利用其对齐残差泄漏栈/ELF 地址，再把 stdout 的 write_base 指向 notes 数组附近，利用 stdout 缓冲区写入对 notes[0] 低字节部分覆盖（改小）；被改小的 notes[0] 再去改 notes[1] 指向堆 size，free 后进不了 0x50 tcache，重获任意分配权。
+- **验证步骤**：1) 布局 3 chunk 使 stdout 可被覆写（flags/write_base 字段序列）；2) 泄漏栈与 ELF 基址（write 输出本身）；3) write_base 定点 notes 附近做 1-2 字节覆盖；4) 借 notes[0]→notes[1] size 篡改绕 tcache 入口；5) 任意分配改 hook/返回地址。
+- **判定标准**：PASS = 三 chunk 约束下完成泄漏+改写+执行；FAIL = 硬套 unsorted bin attack（2.27 的 error msg 不调 _IO_flush_all，行不通——WP 明示踩坑）。
+- **裁决词**：待复跑
+- **来源**：BCTF 2016 three｜六星战队（中国）｜raw/github-repos/sixstars/2018_bctf_h_readme.md（完整 EXP 与 stdout 字段操作在 WP）
+- **关联**：与 [[相邻变量覆写改认证标志（authenticated 旁路）]] 同题族约束解题；「走 stdout」非常规 IO 通道与 [[无头视频流分辨率搜索（RGB 字节流重排 + 尾帧取证）]] 共享直觉；2.27/2.23 两代对照见 [[top chunk 随机化 + calloc 清零下的 unsorted bin 泄漏（error 路径触发 malloc_hook）]]。
+
+### 括号语言深度语义推理（absorb/combine 形式文法自动化）
+- **分层**：困难·单点
+- **假设**：script-me 给出 8 条加法规则实例：单目对 ()() 与嵌套 () 相加结果由双方「最大嵌套深度」与顺序决定——右吸收/左吸收/结合吸收的统一规律 = 深度大者包住深度小者、深度相等则并列；由此可写求解器把任意题面表达式按文法归约，交互答题机自动通关。
+- **验证步骤**：1) 归纳规则：deep(a)+shallow(b) ⇒ b 嵌入 a 外层（absorb 方向由操作数序决定）；2) 写 parser 求两侧深度与结构；3) 按规则生成结果串；4) 脚本接 socket 自动答题至取旗。
+- **判定标准**：PASS = 全部题目答对自动取旗；FAIL = 把 absorb 理解为字符串拼接（忽略深度层级导致错序）。
+- **裁决词**：待复跑
+- **来源**：picoCTF 2018 script me｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2018_script-me-md_h_script-me.md（规则实例与解题脚本在 WP）
+- **关联**：与 [[brainfuck VM 执行轨迹跟踪（解码即抹零）]] 共享「形式语言规则归纳」方法论；自动化答题与 [[LLM 约束解码 + UCT 树搜索恢复审查文本]] 同属「规则发现后脚本收官」。
+
+### SUID 相对设备路径 + IOCTL 失败信息泄露（dev/console 缺斜杠）
+- **分层**：困难·多段链
+- **假设**：holey_beep 为 SUID root 的 PC speaker 程序（Google CTF 真实漏洞复现链）：它打开 dev/console（缺前导斜杠的相对路径）——在自控目录建 dev/console 符号链接指向任意 root 文件；随后对链接目标做 IOCTL 失败，进入错误处理打印目标文件 0x3ff 字节内容，即可读出 root-only 文件（/secret_cake_recipe）。
+- **验证步骤**：1) 确认 SUID 位与打开路径字符串（dev/console 相对）；2) 在工作目录构造 dev/console 链接指向目标 root 文件；3) 运行 holey_beep 令 IOCTL 失败进 debug 输出分支；4) 收集 0x3ff 泄露内容拼出 flag。
+- **判定标准**：PASS = 泄露内容含 CTF{...}；FAIL = 去 patch 二进制找 ROP（真实考点是路径+IOCTL 双缺陷，非内存破坏）。
+- **裁决词**：待复跑
+- **来源**：Google CTF 2018 Holey Beep（Beginner Quest 链）｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2018_holey-beep-md_h_holey-beep.md（完整复现步骤在 WP）
+- **关联**：与 [[管理接口路径穿越自体提取（/proc/self/exe 落盘）]] 同属「路径处理缺陷反读特权文件」；错误路径副作用与 [[top chunk 随机化 + calloc 清零下的 unsorted bin 泄漏（error 路径触发 malloc_hook）]] 共享「error 分支当触发面」思路；SUID 生态与 [[钓鱼 DFIR 报告链（邮件→msc→VBScript 解混淆→白 EXE 黑 DLL→RAT）]] 的白加黑手法呼应。
