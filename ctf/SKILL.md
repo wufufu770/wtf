@@ -8,7 +8,7 @@ description: Solve CTF competition challenges and flag-based security puzzles ac
 ## 1. 定位与边界
 
 - 本 skill 是 **CTF 解题的知识底座与题型路由器**：正文只做题型分流与纪律，具体技术外置到 references/，按需加载。
-- 知识分层：本文件（常驻索引）→ `references/category-*.md`（题型深化，v0.6 十库 268 条）→ `references/strategy-<域>.md`（策略页：这类题怎么想，v0.5 蒸馏策略镜像）→ `../shared/tools/`（双 skill 共用工具用法，去重层，只引用不复制）→ `../shared/REFLIGHT.md`（双 skill 共用回流协议）。
+- 知识分层：本文件（常驻索引）→ `references/category-*.md`（题型深化，v0.7 十库 368 条）→ `references/strategy-<域>.md`（策略页：这类题怎么想，v0.5 蒸馏策略镜像）→ `../shared/tools/`（双 skill 共用工具用法，去重层，只引用不复制）→ `../shared/REFLIGHT.md`（双 skill 共用回流协议）。
 - 与 pentest skill 的分工：**有 flag/赛题/一次性靶场环境**走本 skill；**有授权边界与真实资产**走 pentest skill。CTF 环境默认授权充分，无需走 scope 门槛，但同样禁止把赛题手法用于未授权真实目标。
 
 ## 2. 题型路由表（先分流，再加载）

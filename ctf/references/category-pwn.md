@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "CTF-wiki（pwn 章节）、0rangec3t/Black-cat 五段式范式、M2 实测复跑（2026-10-15）"
 changelog:
+  - "[2026-11-02] v0.7：蒸馏 P4 批次并入 6 条（binary_exploitation 主标 + 隐写批次路由 1（FSB 栈泄露），hypothesis 待复跑；07 审阅 + 08 修正批已归零）｜源：ctf-corpus/distill/by-category/pwn/p4-20261030.md + candidates.jsonl（P4 批次报告 06、审阅报告 07、修正简报 08）"
   - "[2026-10-30] v0.6：蒸馏 P3 批次并入 6 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/pwn/p3-20261029.md + candidates.jsonl（P3 批次报告 02） + 修正批同步（46 修正批涉已入库条目，pilot/04-修正简报）（本文件 9 处）"
   - "[2026-10-29] v0.5：蒸馏 P1+P2 批次并入 15 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜源：ctf-corpus/distill 候选池（candidates.jsonl）+ distill/pilot/01-蒸馏批次报告-P2-20261029.md"
   - "[2026-10-15] 初始空壳，等待首个回流条目"
@@ -53,6 +54,12 @@ changelog:
 23. [stdout FILE 结构改写打 tcache（write_base 定点 + 部分覆写改 size）](#stdout-file-结构改写打-tcachewrite_base-定点-部分覆写改-size)（hypothesis）
 24. [括号语言深度语义推理（absorb/combine 形式文法自动化）](#括号语言深度语义推理absorbcombine-形式文法自动化)（hypothesis）
 25. [SUID 相对设备路径 + IOCTL 失败信息泄露（dev/console 缺斜杠）](#suid-相对设备路径-ioctl-失败信息泄露devconsole-缺斜杠)（hypothesis）
+26. [32 位 FSB 逐偏移 %p 链读栈上 flag（无写原语纯泄露）](#32-位-fsb-逐偏移-p-链读栈上-flag无写原语纯泄露)（hypothesis）
+27. [内核堆 off-by-one 劫持 freelist + modprobe_path 提权（SMEP/SMAP 全开）](#内核堆-off-by-one-劫持-freelist--modprobe_path-提权smepsmap-全开)（hypothesis）
+28. [ELF 段清零对抗（.data/.rodata 清零 + .text 清零两条路）](#elf-段清零对抗datarodata-清零--text-清零两条路)（hypothesis）
+29. [引用计数双删 UAF（brief 扩容重用 + GOT 泄露 + formatter 劫持）](#引用计数双删-uafbrief-扩容重用--got-泄露--formatter-劫持)（hypothesis）
+30. [KVM 虚拟机管理程序逃逸（guest 内核漏洞 → host 堆利用）](#kvm-虚拟机管理程序逃逸guest-内核漏洞--host-堆利用)（hypothesis）
+31. [VM 字节码引擎逃逸（swap2_stack 栈指针越界改写）](#vm-字节码引擎逃逸swap2_stack-栈指针越界改写)（hypothesis）
 
 ### 格式化字符串 %p 泄露栈数据
 - **假设**：程序把用户输入直接作为 printf 第一参数（`printf(user_input)`）→ 输入 `%p %p %p...` 可逐个泄露栈上数据（返回地址/canary/栈指针），第 6 个 `%p` 起越过 printf 自身寄存器参数进入调用者栈帧。
@@ -290,3 +297,66 @@ changelog:
 - **裁决词**：待复跑
 - **来源**：Google CTF 2018 Holey Beep（Beginner Quest 链）｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2018_holey-beep-md_h_holey-beep.md（完整复现步骤在 WP）
 - **关联**：与 [[管理接口路径穿越自体提取（/proc/self/exe 落盘）]] 同属「路径处理缺陷反读特权文件」；错误路径副作用与 [[top chunk 随机化 + calloc 清零下的 unsorted bin 泄漏（error 路径触发 malloc_hook）]] 共享「error 分支当触发面」思路；SUID 生态与 [[钓鱼 DFIR 报告链（邮件→msc→VBScript 解混淆→白 EXE 黑 DLL→RAT）]] 的白加黑手法呼应。
+
+### 32 位 FSB 逐偏移 %p 链读栈上 flag（无写原语纯泄露）
+- **分层**：困难·单点
+- **假设**：32 位非 PIE ELF 若把 flag 读进 vuln 栈帧局部变量且存在 printf(user_input)，则无需 GOT 改写/ROP：gdb 断点定位 flag 缓冲区栈地址相对 printf 首参的 4 字节槽位（本例第 36 槽），用 %36$p→%37$p… 逐次连接读 4 字节小端拼 ASCII——纯读型 FSB 的最短路径。
+- **验证步骤**：1) Ghidra 确认 readflag 写入 local_4c、printf(local_cc) 为 FSB 点；2) gdb 断 printf 前 x/64wx $esp 找 flag 特征双字（0x67616c66="flag"）；3) 数槽位偏移 i；4) pwntools 循环 %<i>$p 发包、int(data,16) 转 p32 拼接；5) 遇 '}' 截断。
+- **判定标准**：PASS = 拼出语义完整 flag；FAIL = 栈 ASLR/远端偏移漂移（本地对照重数槽位）或 flag 含 0x00 截断（%s 单发替代）。
+- **裁决词**：待复跑
+- **来源**：OSCTF 2024 Leaky Pipes｜よっちん（yocchin のブログ）｜raw/team-blogs/yocchin/2024_osctf_leaky-pipes.md
+- **关联**：与 pwn 库 FSB 写原语条目构成读写对照（本条纯泄露免 GOT）；gdb 数槽位法与 [[NTLMv2 响应手工拆解（字段级 hash 形态）]] 的"字段级手工拆解"方法论互通。
+- **熵控预检**：Q1 无重名；Q3 强（gdb 栈图与 pwntools 脚本全在 WP）；Q4 边 2 条。
+
+
+### 内核堆 off-by-one 劫持 freelist + modprobe_path 提权（SMEP/SMAP 全开）
+- **分层**：困难·多段链
+- **假设**：qemu 内核题（+smep,+smap，kaslr 未开）中设备驱动的 edit 例程若多拷 1 字节（malloc_size+1），可溢出改写下一空闲块的 freelist 指针 LSB；内核堆 freelist 弱校验（无 trailing metadata）使指针可指向 channel_info 块内，达成 chunk overlap→控制 data 指针→设备 edit/read 即任意读写→改 modprobe_path 字符串，触发未知格式文件执行提权脚本拿 /root/flag——无需 ret2usr。
+- **验证步骤**：1) 逆向 ioctl 四命令（alloc/free/edit/read）与 channel_info{ id, data, malloc_size }；2) 布置 victim channel + 空闲块使 overflow 落在 freelist 指针；3) 改 LSB 使 next 指向 channel_info 前部；4) 两次 alloc 拿回 overlap 块，写 data 指针；5) read 泄露内核基址校验，edit 覆写 modprobe_path；6) 触发无效格式文件执行拷贝脚本。
+- **判定标准**：PASS = /root/flag 可读；FAIL = freelist 校验版本差异（换 tty_struct/seq_operations 目标）或 kaslr 开启（先泄露基址）。
+- **裁决词**：待复跑
+- **来源**：MidnightSun CTF 2019 Quals HFSIPC (558p/18 solved)｜Dvd848 (S1扩容)｜raw/github-repos/perfectblue/2019_midnightsun-ctf-quals_h_hfsipc.md
+- **关联**：与 pwn 库用户态堆条目构成堆利用分级（用户态 tcache vs 内核 freelist）；modprobe_path 提权与库内 ret2usr 条目构成"SMAP/SMEP 对抗"双路径。
+- **熵控预检**：Q1 无重名（库内无内核堆条目）；Q3 中（结构与思路全在 WP，exp 未全附）；Q4 边 2 条。
+
+
+### ELF 段清零对抗（.data/.rodata 清零 + .text 清零两条路）
+- **分层**：困难·多段链
+- **假设**：判题器清零指定段后仍要求输出 Hello, world!：清 .data/.rodata 时字符串常量归零，改为栈上逐字符 putchar（局部 char 不入文件段）；清 .text 时全部指令归零，出路是让代码落在非 .text 节——用 __attribute__((constructor))（进 .init_array，加载器构造期执行）或把函数显式放自定义 section，objcopy 只清 .text 时代码幸存——考察段语义与加载期执行面。
+- **验证步骤**：1) readelf -S 对照正常编译产物定位段；2) 第一问：char c='H'; putchar(c)…栈变量+常数；3) 第二问：constructor 函数写 hello（链接进 .init_array）或 #pragma code_seg 自定义段；4) gcc -O -m32 编译提交判题。
+- **判定标准**：PASS = 判题器输出 Hello, world!；FAIL = -O 优化把栈变量折叠回常量（用 volatile 抑制）或 constructor 被 LTO 内联（加 noinline）。
+- **裁决词**：待复跑
+- **来源**：中国科学技术大学 Hackergame 2021 Amnesia（轻度失忆 150 + 记忆清除 200）｜Peter Gu（regymm）｜raw/github-repos/hackergame2021/2021_hackergame_h_amnesia.md
+- **关联**：段语义与 [[BMP 头跳过 + 8 字节组 LSB 流提取（zsteg/StegSolve 全盲区）]]（本批）的容器结构意识同源（ELF vs BMP）；"加载期执行面"（init_array）与 pwn 库 hook 类条目（__malloc_hook 等）互证。
+- **熵控预检**：Q1 无重名；Q3 强（两问解法+编译器版本细节在 WP）；Q4 边 2 条。
+
+### 引用计数双删 UAF（brief 扩容重用 + GOT 泄露 + formatter 劫持）
+- **分层**：困难·多段链
+- **假设**：图书管理器的"最畅销"列表持有悬垂引用时，同 book 连删两次（引用计数缺陷）进入 UAF 态；先加短 brief 的书再扩容 brief 使 malloc 重用 victim chunk，List 输出即读伪造 brief 指针（指向 .got 表项泄露 libc），再改 brief 指针+formatter 函数指针（指向 system）二次 List 触发 system("/bin/sh")——无 free hook 时代的 UAF 标准三段。
+- **验证步骤**：1) Add book（短 brief）+ Add best-seller；2) 删 best-seller 两次（Double Remove）；3) 扩容 brief 重用 chunk 覆盖 brief 指针为 GOT 地址；4) List 泄露 libc 基址；5) 二次伪造 brief="/bin/sh" 与 formatter=system；6) List 拿 shell。
+- **判定标准**：PASS = shell 可交互；FAIL = 扩容不落 victim chunk（调 brief 长度匹配 size class）或无 formatter（找 printf 类函数指针）。
+- **裁决词**：待复跑
+- **来源**：WhiteHat Grand Prix 2018 Quals pwn02 (130p/37 solved)｜Writeup 仓（exploit.py 附件）｜raw/github-repos/p4/2018_whitehat_h_pwn02.md
+- **关联**：与 [[内核堆 off-by-one 劫持 freelist + modprobe_path 提权（SMEP/SMAP 全开）]]（本批）构成堆漏洞分层（用户态 UAF vs 内核 off-by-one）；"输出型函数指针劫持"思路与库内格式化输出条目互通。
+- **熵控预检**：Q1 无重名；Q3 中（五步流程在 WP，exp 全文在附件链接）；Q4 边 2 条。
+
+### KVM 虚拟机管理程序逃逸（guest 内核漏洞 → host 堆利用）
+- **分层**：超级难·流程
+- **假设**：以 /dev/kvm 为后端的微型 hypervisor 题，host 通过 VCPU 共享页执行 guest 发来的 alloc/update/free 请求；内核侧（guest 固件，mmap 加载 0x18e0 偏移数据）的 update 例程缺边界检查（页内偏移可越界改写相邻结构），先在 guest 内伪造请求让 host 的 alloc 拿到带 hook 的 chunk，最终在 host 侧复现 malloc/free 利用链拿 RCE——"嵌套漏洞面"（guest 漏洞作为 host 利用原语）。
+- **验证步骤**：1) 静态分析 VCPU 循环与三对内核/host 函数；2) 逆向 guest 固件（0x18e0 blob）找 update 越界；3) 构造 guest 请求序列控制 host malloc 内容；4) host 侧 hook/函数指针劫持；5) 触发 exit 路径拿 shell 读 flag。
+- **判定标准**：PASS = host 进程执行任意命令；FAIL = host 校验了请求序号（找 TOCTOU 窗口）。
+- **裁决词**：待复跑
+- **来源**：RealWorldCTF 2018 Quals Kid VM｜VoidMercy（github WP 仓）｜raw/github-repos/perfectblue/2018_realworldctf_x_kid-vm.md
+- **关联**：与 [[VM 字节码引擎逃逸（swap2_stack 栈指针越界改写）]]（本批 faustctf 路由条）构成"解释器/虚拟化逃逸"双样本（KVM 型 vs 字节码型）；嵌套攻击面与 [[内核堆 off-by-one 劫持 freelist + modprobe_path 提权（SMEP/SMAP 全开）]]（本批）分层互补。
+- **熵控预检**：Q1 无重名；Q3 中（结构分析在 WP，完整 exp 未附）；Q4 边 2 条。
+
+
+### VM 字节码引擎逃逸（swap2_stack 栈指针越界改写）
+- **分层**：超级难·多段链
+- **假设**：自研栈式字节码 VM（0x20 opcodes，指针以 1<<63 打标签防混淆）若 swap2_stack 只校验"≥1 个元素"而不查"≥2"，单元素栈上 swap 会把栈顶与紧邻的 _sp（栈指针本体）交换——攻击者由此获得任意栈指针控制，配合 alloc_buf/fgets 等 opcode 构造 ROP 链逃逸；先 push 一个值再 swap 即改 _sp 指向 code 区执行注入指令。
+- **验证步骤**：1) 逆向 vm_context{_ip,_sp,stack,code,flags}；2) 定位 swap2_stack 的边界检查缺陷；3) 构造单元素 swap 序列改 _sp；4) 用字符串 opcode 组合（concat/atoi/strcmp）读写越界内存；5) ROP/注入取 shell。
+- **判定标准**：PASS = VM 外命令执行；FAIL = 指针标签校验（用 push_mem 造合法标签值）。
+- **裁决词**：待复跑
+- **来源**：Faust CTF 2021 Veighty Machinery（超级难）｜Writeup 仓｜raw/github-repos/perfectblue/2021_faustctf_x_veighty-machinery.md
+- **关联**：与 [[KVM 虚拟机管理程序逃逸（guest 内核漏洞 → host 堆利用）]]（本批）构成逃逸双样本（字节码型 vs hypervisor 型）；opcode 审计清单（边界检查/标签校验/指针算术）可复用至所有解释器审计。
+- **熵控预检**：Q1 无重名；Q3 中（结构与思路在 WP，完整 bytecode 未附）；Q4 边 2 条。

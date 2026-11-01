@@ -1,4 +1,4 @@
-# PORTABILITY.md — 跨 Agent 通用性说明（wtf / ctf，v0.6）
+# PORTABILITY.md — 跨 Agent 通用性说明（wtf / ctf，v0.7）
 
 > 本仓库是 SKILL-DUO 项目 ctf skill 的独立发行版。硬约束不变：**skill 不得绑定任何单一运行时**。任何支持 SKILL.md 约定（Anthropic Agent Skills 规范 / agentskills.io 事实标准）的 Agent 都应能直接加载。
 
@@ -28,11 +28,12 @@
 - 结构验证：name=目录名、description 长度、SKILL.md 行数、引用一层深，四项可用脚本静态检查。
 - 回流质量验证：tests/reflight-static-check.py 做静态校验——裁决词正则 `^(PASS|FAIL|INCONCLUSIVE)$` + 状态词枚举 + 复跑表存在性 + 图边引用存在性（v0.4 第 4 检：[[条目名]] 必须命中全库条目标题）。
 
-## 4. 实测指标（v0.6，2026-10-30 更新）
+## 4. 实测指标（v0.7，2026-11-02 更新）
 
 - ctf/SKILL.md：78 行（≤150 达标；v0.5 题型路由表 10 行 + 策略层行 + 策略跳转规则后仍达标）；description 964 字符（≤1024 达标）。
-- ctf 十题型知识库：五段式条目 268 条（web 35 / crypto 41 / forensics 66 / reverse 27 / pwn 25 / mobile 11 / recon 36 / misc 10 / encoding 10 / aiml 7；其中 134 条 v0.5 蒸馏 P1+P2 并入 + 110 条 v0.6 蒸馏 P3 并入，均自 hypothesis/待复跑起步；库内硬裁决 44 / 待复跑 244）。
-- 策略层（v0.5 首建）：references/strategy-{cross,pwn,crypto,forensics,recon,web}.md 六域策略页 16 条 + 机读 strategy.jsonl（镜像自 ctf-corpus 策略库，源库六检 6/6）。
-- v0.6 变更面：ctf/references/ 十份 category-*.md（P3 批次 110 条并入 + 已入库条目修正批同步 33 项 + recon 重复标题清理 6 处）、ctf/SKILL.md（路由计数 v0.6）、README.md 与本文件同步 v0.6 指标——shared/ 与 tests/ 与 SKILL-DUO 源及 wpt 仓库保持字节同源（`diff -r` 零差异，本次未动）。
+- ctf 十题型知识库：五段式条目 368 条（web 46 / crypto 50 / forensics 108 / reverse 33 / pwn 31 / mobile 16 / recon 50 / misc 10 / encoding 13 / aiml 11；其中 134 条 v0.5 蒸馏 P1+P2 并入 + 110 条 v0.6 蒸馏 P3 并入 + 100 条 v0.7 蒸馏 P4 并入（07 审阅 + 08 修正批 28 项归零后入库），均自 hypothesis/待复跑起步；库内硬裁决 44 / 待复跑 344）。
+- 策略层（v0.5 首建）：references/strategy-{cross,pwn,crypto,forensics,recon,web}.md 六域策略页 16 条 + 机读 strategy.jsonl（镜像自 ctf-corpus 策略库，源库六检 6/6）——本仓镜像口径维持 v0.5 十六条；ctf-corpus 策略源库已增至 21 条（P3/P4 轮新 seed），整体镜像统一留待下轮策略层发行，本轮仅回填池侧双向互指。
+- v0.7 变更面：ctf/references/ 九份 category-*.md（P4 批次 100 条并入；misc 无 P4 条目未动）、ctf/SKILL.md（路由计数 v0.7）、README.md 与本文件同步 v0.7 指标——shared/ 与 tests/ 未动，与 SKILL-DUO 源及 wpt 仓库保持字节同源（`diff -r` 零差异）。入库口径：仅并入候选池条目区正文（含熵控预检行随条目 verbatim 入库），池侧选材留痕/处置表等审计段原地保留不入库。
+- v0.6 变更面（存档）：ctf/references/ 十份 category-*.md（P3 批次 110 条并入 + 已入库条目修正批同步 33 项 + recon 重复标题清理 6 处）。
 - 跨 Agent 通用性硬约束逐项复核：frontmatter 双字段、无专有语法、一层深引用、无人类向文件——均未回退。
-- v0.5.1 指标存档：条目总数 158 不变、硬裁决 44 / 待复跑 134，图边 96 / 节点 194（v0.6 为图边 318 / 节点 304）；v0.5 指标：五段式条目 158 条，ctf/SKILL.md 78 行，description 964 字符。
+- v0.6 指标存档：条目总数 268（硬裁决 44 / 待复跑 244）、图边 318 / 节点 304；v0.5.1 指标存档：条目总数 158 不变、硬裁决 44 / 待复跑 134，图边 96 / 节点 194；v0.5 指标：五段式条目 158 条，ctf/SKILL.md 78 行，description 964 字符。

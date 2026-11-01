@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "0rangec3t/Black-cat（假设-证据范式）、CTF-wiki（misc/取证）、M2 实测复跑（2026-10-15）"
 changelog:
+  - "[2026-11-02] v0.7：蒸馏 P4 批次并入 42 条（隐写主标 38 薄域优先 + 取证主标 8，hypothesis 待复跑；07 审阅 + 08 修正批已归零）｜源：ctf-corpus/distill/by-category/forensics/p4-20261030.md + candidates.jsonl（P4 批次报告 06、审阅报告 07、修正简报 08）"
   - "[2026-10-30] v0.6：蒸馏 P3 批次并入 40 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/forensics/p3-20261029.md + candidates.jsonl（P3 批次报告 02）"
   - "[2026-10-29] v0.5：蒸馏 P1+P2 批次并入 22 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜源：ctf-corpus/distill 候选池（candidates.jsonl）+ distill/pilot/01-蒸馏批次报告-P2-20261029.md"
   - "[2026-10-15] 初始空壳，等待首个回流条目"
@@ -94,6 +95,48 @@ changelog:
 64. [ASCII 十六进制转储回译 pcap（xxd -r -p + 证书吊销定位）](#ascii-十六进制转储回译-pcapxxd--r--p-证书吊销定位)（hypothesis）
 65. [单像素条带图维度重排（55440×1 因子穷举 reshape）](#单像素条带图维度重排554401-因子穷举-reshape)（hypothesis）
 66. [钓鱼 DFIR 报告链（邮件→msc→VBScript 解混淆→白 EXE 黑 DLL→RAT）](#钓鱼-dfir-报告链邮件mscvbscript-解混淆白-exe-黑-dllrat)（hypothesis）
+67. [DeepSound 音频隐写 hash 提取与离线爆破](#deepsound-音频隐写-hash-提取与离线爆破)（hypothesis）
+68. [LSB 载体可见文字首字母口令 + DES 解密](#lsb-载体可见文字首字母口令--des-解密)（hypothesis）
+69. [RAR 头修复 + Blue0 二维码 + USB 击键流量 + 栅栏重排](#rar-头修复--blue0-二维码--usb-击键流量--栅栏重排)（hypothesis）
+70. [Base64 非规范尾差隐写（重编码差值藏比特）](#base64-非规范尾差隐写重编码差值藏比特)（hypothesis）
+71. [PT2262 无线信号波形译码（脉冲宽度三元映射）](#pt2262-无线信号波形译码脉冲宽度三元映射)（hypothesis）
+72. [伪加密 + Red7 通道藏图 + TTL 2bit + 大文字渲染四层链](#伪加密--red7-通道藏图--ttl-2bit--大文字渲染四层链)（hypothesis）
+73. [三图尾随 zip 拼接 + base 家族自动侦测套娃解码](#三图尾随-zip-拼接--base-家族自动侦测套娃解码)（hypothesis）
+74. [密码自递归嵌套 zip + RGB 像素流重绘二维码](#密码自递归嵌套-zip--rgb-像素流重绘二维码)（hypothesis）
+75. [零宽 + morse 控制符 + NTFS 流 + 词频 + Encrypto 五层链](#零宽--morse-控制符--ntfs-流--词频--encrypto-五层链)（hypothesis）
+76. [cloacked-pixel LSB 提取 + keyword 前置 Nihilist 替换](#cloacked-pixel-lsb-提取--keyword-前置-nihilist-替换)（hypothesis）
+77. [剑龙隐写 pyc 切片 + 反编译异或 + 二次隐写](#剑龙隐写-pyc-切片--反编译异或--二次隐写)（hypothesis）
+78. [TTL 高 2bit 隐写 + 伪加密 + 多层 urlsafe base64](#ttl-高-2bit-隐写--伪加密--多层-urlsafe-base64)（hypothesis）
+79. [零宽字符隐写盲识别（vim 不可见字符定位）](#零宽字符隐写盲识别vim-不可见字符定位)（hypothesis）
+80. [PNG 结构修复五重奏（CRC 爆破宽高 + IDAT 块名 + 7z→zip 头 + CRC ASCII + 片段全排列）](#png-结构修复五重奏crc-爆破宽高--idat-块名--7zzip-头--crc-ascii--片段全排列)（hypothesis）
+81. [SQL 盲注流量还原（二分阈值拐点法）](#sql-盲注流量还原二分阈值拐点法)（hypothesis）
+82. [AI 生图 PNG 元数据 Prompt/Negative Prompt 泄密](#ai-生图-png-元数据-promptnegative-prompt-泄密)（hypothesis）
+83. [JPG 尾随 zip 切割 + 载体间隙明文口令 + Blue1 通道](#jpg-尾随-zip-切割--载体间隙明文口令--blue1-通道)（hypothesis）
+84. [exiftool 时间戳作随机种子的像素坐标洗牌还原](#exiftool-时间戳作随机种子的像素坐标洗牌还原)（hypothesis）
+85. [PNG 九点结构修复（签名/IHDR/sRGB/gAMA/IDAT/CRC/IEND 全错位）](#png-九点结构修复签名ihdrsrgbgamaidatcrciend-全错位)（hypothesis）
+86. [Java 文字冒险静态数组提取 + 字符映射像素渲染](#java-文字冒险静态数组提取--字符映射像素渲染)（hypothesis）
+87. [BMP 头跳过 + 8 字节组 LSB 流提取（zsteg/StegSolve 全盲区）](#bmp-头跳过--8-字节组-lsb-流提取zstegstegsolve-全盲区)（hypothesis）
+88. [energetic pixels 能量像素隐写（busysteg 论文工具反演）](#energetic-pixels-能量像素隐写busysteg-论文工具反演)（hypothesis）
+89. [PDF 多层 binwalk 提取 + 解压炸弹规避（-1 尺寸伪文件）](#pdf-多层-binwalk-提取--解压炸弹规避-1-尺寸伪文件)（hypothesis）
+90. [Flash dump MKV 双音轨 + 2000Hz 正弦波摩尔斯 + base32 落图](#flash-dump-mkv-双音轨--2000hz-正弦波摩尔斯--base32-落图)（hypothesis）
+91. [gpjb 四格式文件头切分（gif/png/jpg/bmp 拼接流）](#gpjb-四格式文件头切分gifpngjpgbmp-拼接流)（hypothesis）
+92. [泄露截图 LSB 水印溯源（三通道 Plane0 + PK 嵌入）](#泄露截图-lsb-水印溯源三通道-plane0--pk-嵌入)（hypothesis）
+93. [DTMF 双音多频拨号音译码 + 十进制流多跳解码](#dtmf-双音多频拨号音译码--十进制流多跳解码)（hypothesis）
+94. [ADS-B 航空协议帧解密（pyModeS + tcp.payload 批量解帧）](#ads-b-航空协议帧解密pymodes--tcppayload-批量解帧)（hypothesis）
+95. [冰蝎流量 + 线性光栅图五重采样还原（z 五重切片采样）](#冰蝎流量--线性光栅图五重采样还原z-五重切片采样)（hypothesis）
+96. [HTTP 对象导出 + zip 伪加密 + base64 隐写 + DES 四跳链](#http-对象导出--zip-伪加密--base64-隐写--des-四跳链)（hypothesis）
+97. [Windows 计划任务描述字段藏匿（Base64 + HTML Entity 双编码）](#windows-计划任务描述字段藏匿base64--html-entity-双编码)（hypothesis）
+98. [加密 zip 字典爆破 + Minix 文件系统取证 + PNG magic 篡改修复](#加密-zip-字典爆破--minix-文件系统取证--png-magic-篡改修复)（hypothesis）
+99. [Golly 元胞自动机 RLE 渲染（Game of Life B3/S23）](#golly-元胞自动机-rle-渲染game-of-life-b3s23)（hypothesis）
+100. [内存 dump 无果时的 strings+URL grep 兜底路径](#内存-dump-无果时的-stringsurl-grep-兜底路径)（hypothesis）
+101. [多时区日志归一化排序还原（sonar 十六进制字符流）](#多时区日志归一化排序还原sonar-十六进制字符流)（hypothesis）
+102. [内存 dump 中 SSH 凭据链提取（跳板机场景）](#内存-dump-中-ssh-凭据链提取跳板机场景)（hypothesis）
+103. [盲注 != 逐字符还原 + bzip2 CRC 30bit 补全 + zip/RAR 头连环修复](#盲注--逐字符还原--bzip2-crc-30bit-补全--ziprar-头连环修复)（hypothesis）
+104. [EV3 蓝牙传感器流量四模式替换 + 网格重排成图](#ev3-蓝牙传感器流量四模式替换--网格重排成图)（hypothesis）
+105. [多段链：DOC=ZIP + stegseek 爆破 + GBK 注释 + 像素逆变换（中文题）](#多段链doczip--stegseek-爆破--gbk-注释--像素逆变换中文题)（hypothesis）
+106. [PNG→PDF→…→7z 六层套娃容器（polyglot 逐层剥离）](#pngpdf7z-六层套娃容器polyglot-逐层剥离)（hypothesis）
+107. [巨幅图像逐列/逐行循环偏移对齐（np.roll 绿像素锚点搜索）](#巨幅图像逐列逐行循环偏移对齐nproll-绿像素锚点搜索)（hypothesis）
+108. [PNG Thumbnail Image 残留泄露（alpha 剪切后原图缩略还原）](#png-thumbnail-image-残留泄露alpha-剪切后原图缩略还原)（hypothesis）
 
 ### PNG chunk 解析定位尾随隐写
 - **假设**：PNG 文件结构为 `8 字节魔数 + [4B长度][4B类型][数据][4B CRC]`×N 直到 IEND → IEND 之后若仍有数据即手工附加的隐写内容（最简隐写形态），顺带可暴露 chunk 级异常（自定义类型/长度越界）。
@@ -694,3 +737,429 @@ changelog:
 - **裁决词**：待复跑
 - **来源**：强网杯 2024 Master of DFIR - Phishing｜CTF-Archives 官方存档｜raw/cn-events/qwb2024/2024_qwb2024_master-of-dfir-phishing.md（十二问+双 hint 全在 WP）
 - **关联**：数据安全主链之二；与 [[SQL 调试日志暗格式还原（gzdeflate+b64 双层）+ DNS 外带痕迹重建]] 组成入侵链重建双视角（主机侧/网络侧）；ATT&CK 映射与 [[Go 勒索器逆向 + 云端密钥端点定位（strings 锚点）]] 的样本侧溯源互补。
+
+### DeepSound 音频隐写 hash 提取与离线爆破
+- **分层**：困难·流程
+- **假设**：wav 载体若被 DeepSound 2.0 加密嵌入，其 LSB 载有 DSCF magic 头；deepsound2john 可在任意波形偏移处扫描提取 SHA1 口令哈希（$dynamic_1529$），交 john 字典离线爆破，密码命中后 DeepSound GUI 解密导出隐藏附件——全程无需原密码交互。
+- **验证步骤**：1) ffmpeg 非 wav 先转码；2) deepsound2john.py 逐字节滑窗扫描 DSCF magic（buf[::2]/[::4]/[::8] 三档 quality 模式），打印 $dynamic_1529$<sha1>；3) john 字典爆破；4) DeepSound 以命中口令解密导出；5) audacity 频谱兜底看明文残段。
+- **判定标准**：PASS = 哈希行生成 + 爆破命中 + DeepSound 解密出附件；FAIL = 无 DSCF magic（非 DeepSound 载体）或爆破不中。
+- **裁决词**：待复跑
+- **来源**：INSHack2018 not so deep（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/OwenW_TCT-通关之路/Part15/09_[INSHack2018]not_so_deep.md
+- **关联**：与 [[音频声道分工双载隐写（倒放频谱图 + LSB 载荷）]] 构成音频双通道组（明文频谱 vs 加密 LSB 容器）；工具链同源 [[Mel 频谱图音频逆向（gif 条形图帧→db_to_power→mel_to_audio）]] 的 audacity 前置观察。
+- **熵控预检**：Q1 与库内 steghide/音频条目无重名（DeepSound 为新载体）；Q3 强（deepsound2john 脚本全文在 WP，DSCF 扫描逻辑可直接复刻）；Q4 关联边 2 条均命中候选池节点。
+
+### LSB 载体可见文字首字母口令 + DES 解密
+- **分层**：困难·多段链
+- **假设**：PNG LSB 隐写载荷带密码加密时，口令可能就是载体图可见文字的首字母缩写（本例图内"万物皆空 无欲无求"→wwjkwywq）——载体语义即口令源，可免去爆破。
+- **验证步骤**：1) stegsolve/lsb 脚本发现 LSB 加密流；2) 读取图内中文口号按拼音首字母拼口令；3) DES 解密（WP 附完整 S 盒/IP 置换表实现）。
+- **判定标准**：PASS = 首字母口令解出明文 flag；FAIL = 口令不来自图面文字（需转爆破路径）。
+- **裁决词**：待复跑
+- **来源**：QCTF2018 picture（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/OwenW_TCT-通关之路/Part17/07_[QCTF2018]picture.md
+- **关联**：口令源思路与 [[hex 文本修复 JPEG + steghide 双层 + morse/ROT13]] 的"载体自带线索"同型；LSB 提取与 [[列主序 LSB 扫描（Rows lie. Columns don't）]] 互补。
+- **熵控预检**：Q1 无重名；Q3 中（口令来源线索在 WP 明示，DES 表全套在文）；Q4 边 2 条命中。
+
+### RAR 头修复 + Blue0 二维码 + USB 击键流量 + 栅栏重排
+- **分层**：困难·多段链
+- **假设**：畸形 RAR（文件头 7A→74 单字节错位）修复解压后，PNG Blue 0 通道藏二维码、随附 pcap 为 USB HID 击键记录——四段链每段输出为下段输入，任一环断链即无解。
+- **验证步骤**：1) 010editor 定位 RAR 头 52 61 72 21 1A 07 后异常字节改回 74；2) 解压得 233.png；3) stegsolve Blue plane 0 扫码得扰动密文 ci{v3erf_0tygidv2_fc0}；4) binwalk key.ftm 抽出 key.pcap；5) tshark -T fields -e usb.capdata 导击键；6) HID 键码表映射（00 前缀+第 3 字节 KeyCode，shift 位区分大小写）还原口令；7) 维吉尼亚+栅栏复合解密。
+- **判定标准**：PASS = 四段贯通后 flag 语义完整（含 flag{} 结构）；FAIL = 任一环（头修复/通道选择/键码映射）错位。
+- **裁决词**：待复跑
+- **来源**：BUUCTF USB｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/cmacckk_CTFWriteUp/buuctf_Misc/USB.md
+- **关联**：USB HID 键码映射可反哺流量取证组（与 [[Windows SAM bootKey 转储 + SilentEye 隐写双密钥链]] 同属"多信源密钥汇聚"形态）。
+- **熵控预检**：Q1 无重名；Q3 强（键码映射表与 tshark 命令全在 WP）；Q4 边 1 条。
+
+### Base64 非规范尾差隐写（重编码差值藏比特）
+- **分层**：困难·单点
+- **假设**：多行 base64 文本若每行存在"原始串 vs 规范重编码串"的尾字符差异，差值（字符表索引距离）按 padding 数×2 位 zfill 拼接即隐藏比特流——编码器冗余度即隐写信道。
+- **验证步骤**：1) 逐行 decode 后再 encode 得规范串；2) 对比首异字符在 base64 表中的索引差；3) 差值二进制 zfill(pads×2) 追加；4) 8bit 分组转字符。
+- **判定标准**：PASS = 拼出可读口令/flag；FAIL = 行为规范编码（差值全 0）则无隐写。
+- **裁决词**：待复跑
+- **来源**：GXYCTF2019 SXM gdGhpcyBiYXNlPw==（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/OwenW_TCT-通关之路/Part07/01_：[GXYCTF2019]SXMgdGhpcyBiYXNlPw.md
+- **关联**：与 [[文本空白字符隐写（空格/制表符二进制）]]、[[零宽变体选择符隐写（VS17-256 偏移分组解码）]] 构成"文本载体冗余隐写三部曲"（空白字符/零宽字符/编码尾差）。
+- **熵控预检**：Q1 无重名（库内 base64 条目均为解码链，尾差隐写为首例）；Q3 强（解密脚本全文在 WP）；Q4 边 2 条。
+
+### PT2262 无线信号波形译码（脉冲宽度三元映射）
+- **分层**：困难·单点
+- **假设**：wav 中固定周期重复的方波段为 PT2262 遥控器编码帧，脉宽形态按三元映射（一长一短=F、两短=0、两长=1）译码，末位为停止码——波形观察即可人工完成，无需软件无线电设备。
+- **验证步骤**：1) audacity 打开定位唯一有内容的波形段；2) 逐位识别脉冲形态映射 F/0/1；3) 截去停止码拼 12 位地址码。
+- **判定标准**：PASS = 拼出 FFFFFFFF0001 型地址码即 flag；FAIL = 波形形态不属于 PT2262 三元组（如 PT2242 地址码式 01 序列）。
+- **裁决词**：待复跑
+- **来源**：HDCTF2019 信号分析（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/cmacckk_CTFWriteUp/buuctf_Misc/[HDCTF2019]信号分析.md
+- **关联**：与 [[音频信道分离 FSK 解调 + XOR 奇偶仲裁（SSTV 目标 CRC）]] 构成无线/音频译码组（FSK 数字调制 vs PT2262 脉宽基带）。
+- **熵控预检**：Q1 无重名；Q3 中（映射规则在 WP 图文，波形原始数据不在——复跑需自构信号）；Q4 边 1 条。
+
+### 伪加密 + Red7 通道藏图 + TTL 2bit + 大文字渲染四层链
+- **分层**：困难·多段链
+- **假设**：010editor 尾部合并 zip（伪加密位修复）解压后，stegsolve Red plane 7 通道藏口令图，口钥解出的 txt 为 TTL 隐写（每行 8bit TTL 值取高 2bit），还原的 base64 解码后是"1/0 大文字"ASCII art——五段串联，隐蔽性逐层递进。
+- **验证步骤**：1) 010editor 发现尾随 zip，改伪加密位解压；2) stegsolve Red7 抠出 png 口令图；3) '{:08b}' 格式化每行 TTL 值取前 2bit 拼流；4) 8bit 分组转字符得 base64 串；5) b64decode 后把 '1' 替换为空格，视觉读出大文字口令。
+- **判定标准**：PASS = rar 口令 0ac1fe6b77be5dbe 型字符串从 ASCII art 读出；FAIL = TTL 高 2bit 顺序错（应取 Bin[:-6] 而非低 2bit）。
+- **裁决词**：待复跑
+- **来源**：MRCTF2020 Hello_ misc（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/cmacckk_CTFWriteUp/buuctf_Misc/[MRCTF2020]Hello_ misc.md
+- **关联**：TTL 段与 [[TTL 高 2bit 隐写 + 伪加密 + 多层 urlsafe base64]]（本批 SWPU2019）同构互证；大文字渲染与 [[频谱图高频区二进制读模（0.1+0.4x 秒网格 + 8bit 倒序）]] 同属"视觉化读出"收官。
+- **熵控预检**：Q1 无重名；Q3 强（四段脚本全在 WP）；Q4 边 2 条（1 条本批内）。
+
+### 三图尾随 zip 拼接 + base 家族自动侦测套娃解码
+- **分层**：困难·多段链
+- **假设**：多张 png 尾部各附加一段 zip 分片，按文件序拼接成完整压缩包；ARCHAR 爆破后 hint 给出编码类型子集（0x10/0x20/0x30/0x55 = 16/32/64/85），密文可按字符集正则自动侦测编码类型迭代解码至 flag 出现。
+- **验证步骤**：1) 逐图定位 png 结尾附节数据按序拼接；2) ARCHAR 爆破 zip；3) detect() 按字符集正则（[0-9A-F=]/[A-Z2-7=]/[A-Za-z0-9+/=]/兜底 85）判型；4) baseDec 迭代至含 MRCTF{ 停止。
+- **判定标准**：PASS = 套娃解码终止于 flag；FAIL = 图序错拼（zip CRC 不通过）或混入库外编码（base36/58）。
+- **裁决词**：待复跑
+- **来源**：MRCTF2020 pyFlag（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/cmacckk_CTFWriteUp/buuctf_Misc/[MRCTF2020]pyFlag.md
+- **关联**：图尾拼接与 [[PNG chunk 解析定位尾随隐写]]（库）同型三图版；自动判型解码可下沉编码分析域（与 encoding 分区 base 家族条目互补）。
+- **熵控预检**：Q1 无重名；Q3 强（detect/autoDec 官方脚本全文在 WP）；Q4 边 2 条。
+
+### 密码自递归嵌套 zip + RGB 像素流重绘二维码
+- **分层**：困难·流程
+- **假设**：数百层嵌套 zip 的每层密码 = 本层压缩包文件名去后缀（自递归口令，无需爆破）；解到底为 40000 行 RGB 三元组文本，按 200×200 尺寸 putpixel 重绘即二维码。
+- **验证步骤**：1) 循环 zipfile.extractall(pwd=当前文件名[:-4].encode())；2) 末层 qr.txt 按行 eval 元组；3) PIL 按 product(range(200),range(200)) 逐像素落图；4) 扫码。
+- **判定标准**：PASS = 重绘图可扫码出 flag；FAIL = 某层密码不是自身文件名（需转爆破）或尺寸非整除。
+- **裁决词**：待复跑
+- **来源**：MRCTF2020 千层套路（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/cmacckk_CTFWriteUp/buuctf_Misc/[MRCTF2020]千层套路.md
+- **关联**：与 [[PNG 尾 ZIP 多层嵌套（列主序 LSB→加密包→FSK+倒放摩尔斯）]] 同为多层容器但口令策略不同（爆破 vs 自递归）。
+- **熵控预检**：Q1 无重名；Q3 强（脚本全文在 WP）；Q4 边 1 条。
+
+### 零宽 + morse 控制符 + NTFS 流 + 词频 + Encrypto 五层链
+- **分层**：困难·多段链
+- **假设**：txt 的换行控制符 0x20/0x09 可作 morse 点划（AUTOKEY 密钥）；零宽字符藏 NTFS 提示；7zip 解压（保留 NTFS 流）后 NtfsStreamEditor 抽隐藏文件，词频分析出 Encrypto 口令——工具链跨越文件系统层。
+- **验证步骤**：1) 010editor 看 lookatme.txt 换行符 20/09 当 morse 译出 AUTOKEY；2) 爆破 autokey 得口令句；3) maybehint.txt 零宽解码（zwsp_steg）得 "do u know NTFS?"；4) 7zip 解压保流 + NtfsStreamEditor2 导出；5) Counter 词频排序拼高频字符 → base64 → Encrypto 口令；6) secret 改 .crypto 后缀用口令解密。
+- **判定标准**：PASS = 五层贯通出图；FAIL = 非 7zip 解压导致 NTFS 流丢失（隐藏文件不可见）。
+- **裁决词**：待复跑
+- **来源**：NPUCTF2020 碰上彩虹吃定彩虹（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/cmacckk_CTFWriteUp/buuctf_Misc/[NPUCTF2020]碰上彩虹，吃定彩虹.md
+- **关联**：零宽段与 [[零宽变体选择符隐写（VS17-256 偏移分组解码）]] 构成零宽双条（VS 变体 vs ZWSP 三字符集）；morse 段与 [[hex 文本修复 JPEG + steghide 双层 + morse/ROT13]] 互补。
+- **熵控预检**：Q1 无重名；Q3 中（各层脚本在 WP 但 Encrypto 为 GUI 工具不可脚本化复跑）；Q4 边 2 条。
+
+### cloacked-pixel LSB 提取 + keyword 前置 Nihilist 替换
+- **分层**：困难·多段链
+- **假设**：PNG LSB 头部有异常时优先上 cloacked-pixel 的 lsb.py 解密（无需口令出密文）；密文为 Nihilist 型单表替换，密钥由 hint 把 keyword（lovekfc）提到 26 字母表前构造（lovekfcabdghijmnpqrstuwxyz），按密钥序号替换回标准字母表即明文。
+- **验证步骤**：1) stegsolve 看 LSB 头部异常；2) cloacked-pixel lsb.py 提取得 PVSF{...}；3) keyword 前置构造 26 字母重排表；4) 大小写敏感逐字符替换。
+- **判定标准**：PASS = 替换后 PVSF→flag 语义恢复；FAIL = 密钥序未前置 keyword（直接全字母替换无果）。
+- **裁决词**：待复跑
+- **来源**：QCTF2018 X-man-keyword（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/OwenW_TCT-通关之路/Part15/11_QCTF2018]X-man-Keyword.md
+- **关联**：替换密码收官与 [[hex 文本修复 JPEG + steghide 双层 + morse/ROT13]] 的 ROT13 收官同型；LSB 工具与 [[BMP 位平面隐写读取（跟随写入器逻辑）]] 工具组互补。
+- **熵控预检**：Q1 无重名；Q3 强（替换脚本全文在 WP）；Q4 边 2 条。
+
+### 剑龙隐写 pyc 切片 + 反编译异或 + 二次隐写
+- **分层**：困难·多段链
+- **假设**：trid 识别失败的文件可能是"剑龙（Stegano）pyc 隐写"容器——按 pyc magic（33 0D 0D 0A）偏移切出字节码段，uncompyle6 反编译得 XOR 加密脚本（key=LordCasser）；解出 base64 再解又一层 base64 仍是烟雾弹，真 payload 在剑龙工具的二次隐写层。
+- **验证步骤**：1) trid/010editor 疑似 pyc；2) 从 magic 头切出存 1.pyc；3) uncompyle6 反编译读出 key 与 cipher；4) base64 解码后循环 XOR 还原；5) 结果仍 base64 则解之；6) 剑龙隐写工具打开原文件提取真 flag。
+- **判定标准**：PASS = 剑龙层提得 flag；FAIL = 停在 XOR 层（被烟雾 base64 误导继续解）。
+- **裁决词**：待复跑
+- **来源**：SUCTF2018 dead_z3r0（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/cmacckk_CTFWriteUp/buuctf_Misc/[SUCTF2018]dead_z3r0.md
+- **关联**：反编译段与 reverse 域 pyc 条目跨域互补；"解密结果仍是烟雾"的假终点设计与 [[GIF 近黑帧对 XOR 隐写（缺 finder QR 修复）]] 的多跳设计同型。
+- **熵控预检**：Q1 无重名；Q3 强（反编译源码与 XOR 脚本全在 WP）；Q4 边 2 条。
+
+### TTL 高 2bit 隐写 + 伪加密 + 多层 urlsafe base64
+- **分层**：困难·多段链
+- **假设**：ttl.txt 中只出现 63/127/191/255 四值时为标准 TTL 隐写——每值高 2bit（00/01/10/11）拼流、8bit 分组转字符再 unhexlify 得 zip；伪加密位修复解压后是多层数十重 urlsafe_b64 套娃。
+- **验证步骤**：1) 值域判型（恰四值）；2) 高 2bit 拼接转 ascii；3) binascii.unhexlify 出 zip；4) 改伪加密位解压；5) 循环 base64.urlsafe_b64decode 至含 flag。
+- **判定标准**：PASS = 三段贯通；FAIL = TTL 值域混杂（非纯四值）说明另有变换。
+- **裁决词**：待复跑
+- **来源**：SWPU2019 Network（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/cmacckk_CTFWriteUp/buuctf_Misc/[SWPU2019]Network.md
+- **关联**：与 [[伪加密 + Red7 通道藏图 + TTL 2bit + 大文字渲染四层链]]（本批 MRCTF2020）构成 TTL 双条互证（独立群证据）。
+- **熵控预检**：Q1 无重名；Q3 强（三段脚本全在 WP）；Q4 边 1 条（本批内）。
+
+### 零宽字符隐写盲识别（vim 不可见字符定位）
+- **分层**：困难·单点
+- **假设**：看似正常的英文段落（Lorem ipsum）若 cat -A / vim 下出现成簇不可见字符，即为零宽字符隐写；通用解码器（unicode_steganography.html）按 ZWSP/ZWNJ/ZWJ 三字符集自动还原——不依赖私有脚本。
+- **验证步骤**：1) 字频分析无果时 cat/vim 查不可见字符；2) 复制含零宽段落到通用解码器；3) 按 mode 解出 payload。
+- **判定标准**：PASS = 解出可读 payload；FAIL = 段落无零宽簇（转其他文本隐写路径）。
+- **裁决词**：待复跑
+- **来源**：UTCTF2020 zero（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/cmacckk_CTFWriteUp/buuctf_Misc/[UTCTF2020]zero.md
+- **关联**：与 [[零宽变体选择符隐写（VS17-256 偏移分组解码）]]、[[零宽 + morse 控制符 + NTFS 流 + 词频 + Encrypto 五层链]] 构成零宽三件套（VS 变体/ZWSP/复合链内嵌）——通用解码器路线是工具下沉候选。
+- **熵控预检**：Q1 无重名（三零宽条触发域区分：变体选择符/三字符集/链内嵌）；Q3 中（需在线工具，本地复跑可换 zwsp_steg 库）；Q4 边 2 条。
+
+### PNG 结构修复五重奏（CRC 爆破宽高 + IDAT 块名 + 7z→zip 头 + CRC ASCII + 片段全排列）
+- **分层**：困难·流程
+- **假设**：五张损坏 png 各藏一段 base64 分片，修复手段各不相同：①CRC 爆破宽高（struct.pack 暴力 5000×5000）；②IDAT 块名缺失补 49 44 41 54；③7z 头错改 zip（30 7A→50 4B）；④chunk CRC 值本身是可打印 ASCII 明文；⑤尾注明示分片——五段全排列 b64decode 即 flag。
+- **验证步骤**：1) 逐图 tweak:png 校验定位损坏类型；2) 按上述五法分别修复/抽取；3) Blue plane 2 扫码取第二片；4) 1000 文件按大小排序找明文档；5) itertools.permutations 全排列试解。
+- **判定标准**：PASS = 某排列 b64decode 出 flag；FAIL = 排列组合爆炸外（>5 片）需缩域。
+- **裁决词**：待复跑
+- **来源**：湖南省赛2019 Findme（BUUCTF 平台复现）｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/cmacckk_CTFWriteUp/buuctf_Misc/[湖南省赛2019]Findme.md
+- **关联**：CRC 爆破宽高与 [[PNG chunk 解析定位尾随隐写]]（库）同域；IDAT 修复与 [[hex 文本修复 JPEG + steghide 双层 + morse/ROT13]] 的手工修复组互补。
+- **熵控预检**：Q1 无重名；Q3 强（五段脚本与字节值全在 WP）；Q4 边 2 条。
+
+### SQL 盲注流量还原（二分阈值拐点法）
+- **分层**：困难·流程
+- **假设**：盲注 pcap 的 http.request.uri 里含 ascii(substr(...,i,1))>k 型 payload 序列，按"位置 i 变化时取上一条阈值"的拐点规则可逐字符还原注入结果——无需看响应包，纯请求侧即可重建被拖数据。
+- **验证步骤**：1) tshark -Y http.request -T fields -e http.request.full_uri 导出；2) urllib.parse.unquote 还原；3) 正则抽 (位置, 阈值) 对；4) i 跳变处取前值转 chr。
+- **判定标准**：PASS = 还原出 flag 完整字符串；FAIL = 注入非二分型（等值比较型需改判式）。
+- **裁决词**：待复跑
+- **来源**：BUUCTF sqltest｜cmacckk CTFWriteUp（MIT）｜raw/cn-platforms/buu-stego/cmacckk_CTFWriteUp/buuctf_Misc/sqltest.md
+- **关联**：取证侧盲注还原与 web 域注入条目构成攻防对照（攻击面在 web，还原面在 forensics）；tshark 字段导出与 [[NTLMv2 响应手工拆解（字段级 hash 形态）]] 同属"字段级流量切片"。
+- **熵控预检**：Q1 无重名；Q3 强（提取脚本全文在 WP）；Q4 边 2 条。
+
+### AI 生图 PNG 元数据 Prompt/Negative Prompt 泄密
+- **分层**：困难·单点
+- **假设**：AI 生成图片的 PNG TextChunk 常保留完整生成参数（Software/Prompt/Negative Prompt），出题人若把 flag 写进 Negative Prompt（"definitely no 0xVoid{...}"的反语陷阱），exiftool 一发即中——生成器元数据是常被忽视的泄密面。
+- **验证步骤**：1) exiftool 全字段打印；2) 检查 Prompt/Negative Prompt/Software 三个生成器特征字段；3) 语义反转读出 flag。
+- **判定标准**：PASS = Negative Prompt 中直接含 flag 串；FAIL = 参数被剥离（转 LSB/频谱路径）。
+- **裁决词**：待复跑
+- **来源**：0xV01D CTF 2026 V2 Negative Prompt Masterpiece｜よっちん（yocchin のブログ）｜raw/team-blogs/yocchin/2026_0xv01d-ctf-2026-v2_negative-prompt-masterpiece.md
+- **关联**：与 [[EXIF Make 字段跨图序拼接（同字段跨文件 + zsteg 补刀）]] 构成元数据泄密双条（相机 EXIF vs AI 生成器 TextChunk）；AI 生图泄密面向 aiml 域延伸。
+- **熵控预检**：Q1 无重名；Q3 强（exiftool 输出全文在 WP）；Q4 边 2 条。
+
+
+### JPG 尾随 zip 切割 + 载体间隙明文口令 + Blue1 通道
+- **分层**：困难·多段链
+- **假设**：binwalk 发现 jpg 尾部附加加密 zip 时，口令常以明文藏在 jpg 数据结束与 zip 头之间的间隙字节里；dd 按偏移切割、间隙抄口令解压、stegsolve Blue plane 1 读真图——三跳组合。
+- **验证步骤**：1) binwalk 定位 zip 起始偏移；2) dd bs=1 skip=<off> 切出 flag.zip；3) 二进制编辑器查看 jpg EOI（FF D9）与 zip PK 头之间字符串抄口令；4) unzip -P 解压；5) stegsolve Blue plane 1。
+- **判定标准**：PASS = 三跳贯通出 flag；FAIL = 间隙无口令（转 zip 爆破路径）或通道不在 Blue1。
+- **裁决词**：待复跑
+- **来源**：1337UP LIVE CTF 2024 In Plain Sight｜よっちん（yocchin のブログ）｜raw/team-blogs/yocchin/2024_1337up-live-ctf_in-plain-sight.md
+- **关联**：与 [[PNG chunk 解析定位尾随隐写]]（库）、[[三图尾随 zip 拼接 + base 家族自动侦测套娃解码]]（本批）同属"容器尾随"组，本条增量＝间隙明文口令（免爆破）；同作者 zip 尾随 GIF 切割（CTF@CIT 2025 Baller，binwalk 误报 JBOOT 头仍可按偏移切）与 CTF@CIT 2024 I LOVE PRIME（exiftool Description 字段直读 flag）作为同型低增量变体并入本组不另立条。
+- **熵控预检**：Q1 与库内尾随条目区分（间隙口令为增量）；Q3 强（dd/unzip 命令全在 WP）；Q4 边 3 条。
+
+### exiftool 时间戳作随机种子的像素坐标洗牌还原
+- **分层**：困难·单点
+- **假设**：像素位置被 random.shuffle 打乱的"乱码图"，其种子若是文件 mtime 的 UNIXTIME（exiftool 可读），则用同种子重放 shuffle 序列逆向赋值即可复原图像——PRNG 可逆性 + 元数据侧信道组合。
+- **验证步骤**：1) exiftool 读 File Modification Date/Time 转 epoch；2) random.seed(ts) 后 shuffle new_y/new_x（与加密端同序）；3) 逆映射 org[y][x]=img[i][j] 逐像素回填；4) 还原图扫码。
+- **判定标准**：PASS = 还原出可读 QR；FAIL = 种子非 mtime（试 Date/Time Original 等其他时间字段）或洗牌维度序不同。
+- **裁决词**：待复跑
+- **来源**：IRON CTF 2024 Random Pixels｜よっちん（yocchin のブログ）｜raw/team-blogs/yocchin/2024_iron-ctf-2024_random-pixels.md
+- **关联**：PRNG 种子重放与 [[Mel 频谱图音频逆向（gif 条形图帧→db_to_power→mel_to_audio）]] 同属"算法可逆重放"型；种子侧信道思路可反哺数据安全域（弱随机数泄露）。
+- **熵控预检**：Q1 无重名；Q3 强（还原脚本全文在 WP）；Q4 边 2 条。
+
+### PNG 九点结构修复（签名/IHDR/sRGB/gAMA/IDAT/CRC/IEND 全错位）
+- **分层**：困难·流程
+- **假设**：png 被多处篡改（签名 89 4A 50 47、IHDR 尺寸/块名、sRGB 尺寸、gAMA 块名与 CRC、IDAT 尺寸/CRC、IEND CRC 缺失）时按 png 规范逐点修复后仍可能差一口气——用画图软件"强读强存"重编码补齐剩余结构损伤，再上 stegsolve XOR 通道读淡印内容。
+- **验证步骤**：1) 十六进制编辑器逐偏移对照修复（WP 附 9 处偏移+字节对照表）；2) paint/图像软件强制打开并另存（触发解码器容错重编码）；3) stegsolve XOR 通道扫描读上半部淡色文字。
+- **判定标准**：PASS = XOR 通道读出 flag；FAIL = 修复后直接可读则无需 XOR（更简单路径）。
+- **裁决词**：待复跑
+- **来源**：Break the Syntax CTF 2025 Sus data｜よっちん（yocchin のブログ）｜raw/team-blogs/yocchin/2025_break-the-syntax-ctf-2025_sus-data.md
+- **关联**：与 [[PNG 结构修复五重奏（CRC 爆破宽高 + IDAT 块名 + 7z→zip 头 + CRC ASCII + 片段全排列）]]（本批）构成 PNG 修复双条（结构错位型 vs 数据缺损型）；"容器修复→通道读取"接力与 [[hex 文本修复 JPEG + steghide 双层 + morse/ROT13]] 同构。
+- **熵控预检**：Q1 无重名；Q3 强（9 处偏移字节对照全在 WP）；Q4 边 2 条。
+
+### Java 文字冒险静态数组提取 + 字符映射像素渲染
+- **分层**：困难·多段链
+- **假设**：交互式 Java 文字冒险（jar）的逻辑分支只是烟雾，flag 在 jadx 反编译可见的静态 String[] 数组里；数组元素为 a-g 七种字符的序列，按字符→颜色映射逐像素渲染即出图——游戏状态机（喂松鼠×3 + F5 开启动物语言）只是把同一数组按交互路径分片展示。
+- **验证步骤**：1) jadx-gui 反编译 Main.class 直接读 flags[]；2) 每字符映射一像素（a-g 对应灰阶/色带）；3) 固定宽度逐行渲染成图；4) 读图。
+- **判定标准**：PASS = 渲染图可读出 flag；FAIL = 需按游戏路径取子串拼接（交互态分片）。
+- **裁决词**：待复跑
+- **来源**：USC CTF Fall 2024 Redwoods｜よっちん（yocchin のブログ）｜raw/team-blogs/yocchin/2024_usc-ctf-fall-2024_redwoods.md
+- **关联**：静态数组直读与 [[密码自递归嵌套 zip + RGB 像素流重绘二维码]]（本批）的"像素流重绘"收官同型；反编译入口与 reverse 域 jadx 条目跨域互补。
+- **熵控预检**：Q1 无重名；Q3 中（flags 数组全文在 WP，渲染宽度需试）；Q4 边 2 条。
+
+
+### BMP 头跳过 + 8 字节组 LSB 流提取（zsteg/StegSolve 全盲区）
+- **分层**：困难·单点
+- **假设**：BMP 载体 LSB 隐写在 zsteg/StegSolve 均无输出时，可能是"跳过 54 字节头后每 8 个连续字节 LSB 组一 payload 字节"的朴素实现——工具盲区需手写 mmap 提取器兜底。
+- **验证步骤**：1) 自写脚本 mmap 只读映射文件；2) 从 offset 54 起步长 8 取 8 字节组；3) 每组各取 b&0x01 按序拼 8bit（高位在前）；4) 遇 0x00 截断输出。
+- **判定标准**：PASS = 输出 picoCTF{st0r3d...} 形态完整串；FAIL = 位序反（低位在前翻转重拼）或起始偏移非 54（试 1078 调色板后）。
+- **裁决词**：待复跑
+- **来源**：picoCTF 2018 LoadSomeBits (Forensics 500)｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2018_loadsomebits-md_h_loadsomebits.md
+- **关联**：与 [[WAV 帧字节 LSB 流提取（wave.readframes 全帧低位）]] 同属"朴素 LSB 流"双载体版（BMP vs WAV），且互为"工具盲区手写兜底"证据；与 [[BMP 位平面隐写读取（跟随写入器逻辑）]] 构成 BMP 三角（位平面/朴素流/写入器跟随）。
+- **熵控预检**：Q1 与库内 BMP 条目区分（54 字节步进组为增量）；Q3 强（mmap 脚本全在 WP）；Q4 边 3 条。
+
+### energetic pixels 能量像素隐写（busysteg 论文工具反演）
+- **分层**：困难·流程
+- **假设**：学术隐写算法（Keyless dynamic optimal multi-bit image steganography using energetic pixels）已被出题工具化（github jaybosamiya/busysteg）；题面给出论文线索时，检索论文题名→定位作者开源工具→编译反演即提取——"论文→开源实现"复现链是学术型隐写题的通用解。
+- **验证步骤**：1) 从题面/提示提取论文关键词；2) Google Scholar/搜索引擎定论文，github 搜同名工具；3) clone 编译（依赖 OpenCV）；4) 对目标图运行解嵌入。
+- **判定标准**：PASS = 工具直接吐 flag；FAIL = 工具版本不匹配（按论文伪代码自实现）。
+- **裁决词**：待复跑
+- **来源**：LCTF 2017 拿去当壁纸吧朋友｜六星战队（中国）｜raw/github-repos/sixstars/2017_lctf_h_lctf.md
+- **关联**：学术隐写复现与 [[Mel 频谱图音频逆向（gif 条形图帧→db_to_power→mel_to_audio）]] 同属"算法论文反演"；同文件另两题（angr 约束求解→[[百点位运算约束的 angr 覆盖引导求解（afl-qmode 加速）]]、padding oracle→库内既有条目）跨域互链。
+- **熵控预检**：Q1 无重名；Q3 中（WP 给论文题名+工具仓，编译参数需自查）；Q4 边 3 条。
+
+### PDF 多层 binwalk 提取 + 解压炸弹规避（-1 尺寸伪文件）
+- **分层**：困难·单点
+- **假设**：pdf 内嵌 zip 双文件（flag.txt 压缩 41B + galf.txt 声称解压 -1 字节）是典型解压炸弹陷阱；binwalk -Me 递归提取时用 ^C 及时中断即可拿到 flag.txt 而不被 galf.txt 撑爆磁盘——"看尺寸列再提取"是取证纪律。
+- **验证步骤**：1) binwalk EATME.pdf 观察两个 zip 条目的压缩/解压尺寸；2) binwalk -Me 递归提取；3) flag.txt 落盘后立即 ^C；4) cat flag.txt（base64 再解一层）。
+- **判定标准**：PASS = flag.txt 完整且未触发炸弹；FAIL = 全量提取导致磁盘/内存耗尽（预防性用 -D 限制或 dd 精确切割）。
+- **裁决词**：待复跑
+- **来源**：Trend Micro CTF 2018 Misc 100｜Dvd848 (S1扩容)｜raw/github-repos/balsn/slices/20180914-trendmicroctf/misc-100.md
+- **关联**：与 [[JPG 尾随 zip 切割 + 载体间隙明文口令 + Blue1 通道]]（本批）同属"容器嵌套"组，本条增量＝尺寸 -1 炸弹陷阱识别；取证纪律面向数据安全（取证操作自身安全）。
+- **熵控预检**：Q1 无重名；Q3 强（binwalk 输出全在 WP）；Q4 边 2 条。
+
+### Flash dump MKV 双音轨 + 2000Hz 正弦波摩尔斯 + base32 落图
+- **分层**：困难·多段链
+- **假设**：USB 闪存镜像取证中，mkv 视频时长异常（8 分钟内容 1 小时文件）常因附加隐藏音轨（mkvinfo 可见 track 3：PCM 2000Hz 单声道）；第二音轨的规则正弦波（1 或 3 个正弦一组+长短间隙）是摩尔斯码，译码得 base32，解码落 PNG，图背景阴影是被弱化的 QR——五跳取证链。
+- **验证步骤**：1) dd/挂载 dump，过滤垃圾覆写文件；2) mkvinfo 列 Track 找隐藏音轨；3) mkvextract tracks 2:track.wav；4) Audacity 观波形译摩尔斯；5) base32 解码存 png；6) 对比度增强还原 QR 阴影。
+- **判定标准**：PASS = QR 可扫出内容；FAIL = 阴影 QR 缺定位角（手工补 finder pattern）。
+- **裁决词**：待复跑
+- **来源**：CTFZone 2018 Quals Ghost in the flash (416p/4 solved)｜p4 (波兰战队)｜raw/github-repos/p4/2018_ctfzone-quals_h_for-ghost.md
+- **关联**：与 [[音频信道分离 FSK 解调 + XOR 奇偶仲裁（SSTV 目标 CRC）]]、[[音频帧重排恢复（排列指示数组）]] 构成音频取证三态（FSK/重排/摩尔斯）；"时长异常→隐藏轨"启发式与 [[GIF 近黑帧对 XOR 隐写（缺 finder QR 修复）]] 的弱化 QR 修复互补。原 WP 未完全解出（到 QR 阴影步），复跑须自带后段假设。
+- **熵控预检**：Q1 无重名；Q3 中（链条前三跳命令全在 WP，QR 修复段 WP 未完成）；Q4 边 4 条。
+
+### gpjb 四格式文件头切分（gif/png/jpg/bmp 拼接流）
+- **分层**：困难·单点
+- **假设**：自造扩展名（.gpjb = gif/png/jpg/bmp 首字母）的文件实为海量小图按四格式头拼接的流；file 只识别第一个 gif 头；按 magic（GIF89a/\x89PNG/BM/\xFF\xD8\xFF\xE0）正则定位全部边界切分，每片即一个字符图——切分后人工誊写。
+- **验证步骤**：1) file 确认首格式；2) python re.finditer 逐 magic 找全部起始偏移；3) 按偏移切分（片尾=下一头偏移）；4) 逐片查看誊写字符；5) 按题面格式插空格组 flag。
+- **判定标准**：PASS = 誊写串过格式校验；FAIL = 有 bmp 头误报（BM 两字节过短，需长度阈值过滤）。
+- **裁决词**：待复跑
+- **来源**：SECCON 2015 Steganography 1 (100p)｜p4 (波兰战队)｜raw/github-repos/p4/2015_seccon_h_100.md
+- **关联**：与 [[三图尾随 zip 拼接 + base 家族自动侦测套娃解码]]（本批）同属"多载体拼接"组；自造扩展名启发式与 [[剑龙隐写 pyc 切片 + 反编译异或 + 二次隐写]] 的"异常扩展名先查真实 magic"互证。
+- **熵控预检**：Q1 无重名；Q3 强（切分脚本全在 WP）；Q4 边 2 条。
+
+### 泄露截图 LSB 水印溯源（三通道 Plane0 + PK 嵌入）
+- **分层**：困难·多段链
+- **假设**：企业泄露溯源场景中，监控软件对截图打的"看不见的水印"常是 RGB 三通道 Plane 0 的 LSB 嵌入；StegSolve 逐面翻查顶缘异常→Data Extract (R0/G0/B0) Save Bin→预览见 PK 头→binwalk -eM 提取 flag.txt——"泄露甄别"叙事下的标准 LSB 取证。
+- **验证步骤**：1) stegsolve 翻 Plane 0 三通道看顶部异常条带；2) Data Extract 勾 R0/G0/B0 位序 MSB；3) Save Bin 后 binwalk -eM；4) cat 提取目录内 flag.txt。
+- **判定标准**：PASS = 提取出语义完整溯源标记；FAIL = 单通道（改勾 R0 only）或位序 LSB（翻转重提）。
+- **裁决词**：待复跑
+- **来源**：Cyber Cooperative CTF 2023 Funding Secured (200p/153 solved)｜Nightxade（github WP 仓）｜raw/github-repos/nightxade/_writeups/2023/Cyber-Cooperative-CTF-2023/forensics/funding-secured.md
+- **关联**：泄露溯源叙事直连数据安全主线（与 recon 分区 [[数据脱敏四字段规则表（姓名/手机/身份证/银行卡/Email）]]、[[权限配置×操作日志双文件交叉违规检测（四违规码）]] 审计系列呼应）；LSB 三通道组提取与 [[BMP 头跳过 + 8 字节组 LSB 流提取（zsteg/StegSolve 全盲区）]]（本批）构成"工具可达 vs 工具盲区"对照。
+- **熵控预检**：Q1 无重名；Q3 强（全流程命令在 WP）；Q4 边 2 条。
+
+### DTMF 双音多频拨号音译码 + 十进制流多跳解码
+- **分层**：困难·多段链
+- **假设**：通话录音 wav 若为 DTMF 按键音（人耳可辨嘟嘟序列），频谱是双音叠加（低频组 697-941Hz + 高频组 1209-1477Hz）；在线 DTMF 检测器（unframework.github.io/dtmf-detect）转数字串→合并→十进制转十六进制→hex 转 ASCII 出 flag——音频侧信道三跳。
+- **验证步骤**：1) 听音/频谱确认 DTMF 特征；2) dtmf-detect 上传逐键转数字；3) 数字串合并为十进制大数；4) 转十六进制；5) From_Hex 转 ASCII。
+- **判定标准**：PASS = 末段 dsc{...} 语义完整；FAIL = 数字串需分段转 hex（整串溢出精度时按 2-3 位分组）。
+- **裁决词**：待复跑
+- **来源**：DeconstruCT.F 2023 Mastermind｜Nightxade（github WP 仓）｜raw/github-repos/daffainfo/2023_deconstruct-f_h_mastermind.md
+- **关联**：DTMF 与 [[PT2262 无线信号波形译码（脉冲宽度三元映射）]]（本批）构成"模拟信号译码"双条（电话拨号 vs 无线遥控）；多跳编码收官与 [[三图尾随 zip 拼接 + base 家族自动侦测套娃解码]] 同构。
+- **熵控预检**：Q1 无重名（库内无 DTMF 条目）；Q3 强（解码链全在 WP）；Q4 边 2 条。
+
+
+### ADS-B 航空协议帧解密（pyModeS + tcp.payload 批量解帧）
+- **分层**：困难·流程
+- **假设**：纯 TCP 流量包中 46 hex 字符长的 payload 若为 ADS-B 航空器广播帧（Mode S），pyModeS.tell() 可逐帧解出 ICAO 地址/速度/呼号等字段；"找最快飞机"类问题即帧级属性排序——非 Web 协议审计的通用路径：识别协议→库解帧→属性聚合。
+- **验证步骤**：1) tshark -r x.pcapng -T fields -e tcp.payload 导出（空行过滤）；2) 只留长度 46 的行；3) pyModeS.tell(item[18:46]) 批量解帧；4) 从 tell 输出筛速度字段取最大；5) ICAO 大写 + speed 拼接 MD5 提交。
+- **判定标准**：PASS = 解帧输出含可读速度/ICAO 且 MD5 校验通过；FAIL = 帧切位错（调整 [18:46] 偏移）或协议为 ADS-B 之外（对照帧头 8D DF17 特征）。
+- **裁决词**：待复跑
+- **来源**：强网杯 2023 谍影重重2.0｜Lunatic（A1natas）｜raw/team-blogs/goodlunatic/2023_qwb_h_碟影重重2-0.md
+- **关联**：与 [[NTLMv2 响应手工拆解（字段级 hash 形态）]] 同属"私有/专用协议字段级解析"；"GPT 识别协议→找解析库"的检索链是协议取证元方法。
+- **熵控预检**：Q1 无重名（库内无航空协议条目）；Q3 强（tshark+pyModeS 脚本全在 WP）；Q4 边 2 条。
+
+### 冰蝎流量 + 线性光栅图五重采样还原（z 五重切片采样）
+- **分层**：困难·多段链
+- **假设**：冰蝎 webshell 流量解出的 PNG 若人眼看是"乱纹"，可能是 N 重线性光栅（每 5 列取 1 列藏真图）；numpy 切片 z[:, i::5, :] 对 i=0..4 各渲染一张，其中一张即真图——光栅是"视觉不可见"的低成本实现。
+- **验证步骤**：1) 冰蝎流量解密（库内既有条目）得 flag.png；2) np.array(Image.open) 读形状；3) for i in range(5): z[:, i::5, :] = img[:, i::5, :] 渲染五张；4) 逐张肉眼/OCR 识别。
+- **判定标准**：PASS = 五采样中一张可读；FAIL = 步长非 5（尝试 4/6/8）或为行光栅（换 z[i::5, :, :]）。
+- **裁决词**：待复跑
+- **来源**：浙江省大学生网络与信息安全竞赛 2023 NewGrating（Byxs20 出题）｜Lunatic（A1natas）｜raw/team-blogs/goodlunatic/2023_ev_h_newgrating.md
+- **关联**：光栅采样与 [[密码自递归嵌套 zip + RGB 像素流重绘二维码]]（本批）构成"像素重排还原"双型（规则采样 vs 数据重绘）；冰蝎入口与 [[冰蝎已知密钥流量解密 + des3 salt 容器 + emoji 拼音密文]]（库）接力。
+- **熵控预检**：Q1 无重名；Q3 强（五采样脚本全文在 WP）；Q4 边 2 条。
+
+### HTTP 对象导出 + zip 伪加密 + base64 隐写 + DES 四跳链
+- **分层**：困难·多段链
+- **假设**：HTTP 流量题的"导出对象→zip（注释给 key）→伪加密修复→base64 隐写提取→DES 解密"是完整攻击残留取证链；伪加密改两个加密位（0/1 标志）即解，base64 隐写用尾差提取器（PuzzleSolver/手写）出密文，注释里的 key 直接喂 DES。
+- **验证步骤**：1) wireshark 导出 HTTP 对象筛 file.zip；2) 读 zip 注释抄 key；3) 010editor 翻转两个加密标志位；4) 解压得 base64 串，尾差提取隐写位得密文；5) DES-CBC 解密。
+- **判定标准**：PASS = DES 输出 flag{...} 语义完整；FAIL = 隐写提取位序反（翻转重提）或 DES 模式差异（ECB/CBC 试）。
+- **裁决词**：待复跑
+- **来源**：长城杯 2024 pcap｜Lunatic（A1natas）｜raw/team-blogs/goodlunatic/2024_ev_h_pcap.md
+- **关联**：与 [[Base64 非规范尾差隐写（重编码差值藏比特）]]（本批）共享尾差子环节（本条为链型应用，彼条为原理条）；伪加密修复与 [[hex 文本修复 JPEG + steghide 双层 + morse/ROT13]] 的"容器修复先行"同构。
+- **熵控预检**：Q1 与尾差原理条已区分（链型 vs 原理）；Q3 强；Q4 边 3 条。
+
+### Windows 计划任务描述字段藏匿（Base64 + HTML Entity 双编码）
+- **分层**：困难·单点
+- **假设**：应急响应中计划任务程序（taskschd.msc）的"描述"字段是常被忽视的藏匿点；内容 f^l^a^g^:JiM3ODs... 形态是"^"分隔的 Base64，解码后再过 HTML Entity（&#78;）双层即出 payload——Windows 工件审计清单项。
+- **验证步骤**：1) 计划任务程序找异常任务（如 Driverupdates）；2) 复制描述字段；3) CyberChef From_Base64 + From_HTML_Entity；4) 读出明文。
+- **判定标准**：PASS = 双层解码出语义完整 flag；FAIL = 分隔符非 ^（换行/空格变体）或编码序反（先 HTML 后 Base64）。
+- **裁决词**：待复跑
+- **来源**：CISCN 2025 CCB 初赛 WinFT_2｜Volcania 战队 bili33（公开 WP）｜raw/cn-events/ciscn/2025_ciscn_h_winft_2__bili33.md
+- **关联**：计划任务藏匿与库内持久化条目（注册表/启动项）互补构成 Windows 持久化工件地图；"冷门字段藏 payload"与 [[EXIF Make 字段跨图序拼接（同字段跨文件 + zsteg 补刀）]] 的元数据思路互通。
+- **熵控预检**：Q1 无重名；Q3 强（解码链命令在 WP）；Q4 边 2 条。
+
+
+### 加密 zip 字典爆破 + Minix 文件系统取证 + PNG magic 篡改修复
+- **分层**：困难·多段链
+- **假设**：未知格式大文件（5MB "d"）若是 Minix filesystem（file 识别），挂载/解析后 strings 出 IHDR 说明内嵌 PNG 但 magic 被改（PNG→PUG）：对照标准 PNG 头逐字节修复即得桌面截图证据——"文件系统层→镜像层"双层取证。
+- **验证步骤**：1) fcrackzip -D -p crackstation 字典爆破 zip（本例 tacos）；2) file 识 Minix V1；3) strings | grep IHDR 定位 PNG 偏移；4) vim/xxd 对照标准头改 PUG→PNG；5) 打开截图读 flag。
+- **判定标准**：PASS = 修复后 PNG 可打开；FAIL = magic 多处篡改（全文件搜 PUG 逐个改）或分区需 mount -o loop。
+- **裁决词**：待复跑
+- **来源**：IceCTF 2018 Hard Shells (Forensics 200p)｜Writeup 仓（IceCTF 官方格式）｜raw/github-repos/shiltemann/2018_icectf_h_hard-shells.md
+- **关联**：PNG magic 修复与 [[PNG 结构修复五重奏（CRC 爆破宽高 + IDAT 块名 + 7z→zip 头 + CRC ASCII + 片段全排列）]]（本批）构成修复层级对照（magic 级 vs 结构级）；Minix 冷门文件系统意识与 [[剑龙隐写 pyc 切片 + 反编译异或 + 二次隐写]] 的"file 优先"互证。
+- **熵控预检**：Q1 无重名；Q3 强（全命令链在 WP）；Q4 边 2 条。
+
+### Golly 元胞自动机 RLE 渲染（Game of Life B3/S23）
+- **分层**：困难·单点
+- **假设**：给出 "x=0,y=0,rule=B3/S23" 头的纯文本是 Golly 元胞自动机 RLE 格式；导入 golly 软件选 Life 规则渲染即出 flag 图——冷门仿真格式的"工具链识别→渲染"路径。
+- **验证步骤**：1) 识别 RLE 特征头（rule=B3/S23 生命游戏）；2) 内容存 .rle；3) Golly File→Open 渲染；4) 缩放到合适尺度读图。
+- **判定标准**：PASS = 渲染出可读字符；FAIL = 需运行 N 代演化后稳定成图（Play 后观察）或规则变体（按 rule 字段选对应规则集）。
+- **裁决词**：待复跑
+- **来源**：SunshineCTF 2019 Golly Gee Willikers (Forensics 100p)｜Writeup 仓｜raw/github-repos/Dvd848/2019_golly-gee-willikers-md_h_golly-gee-willikers.md
+- **关联**："冷门格式→专用工具渲染"与 [[剑龙隐写 pyc 切片 + 反编译异或 + 二次隐写]]（本批）同型；RLE 压缩（obo/b3o 计数展开）可作编码分析域交叉例。
+- **熵控预检**：Q1 无重名；Q3 中（格式与工具在 WP，渲染参数需试）；Q4 边 1 条。
+
+### 内存 dump 无果时的 strings+URL grep 兜底路径
+- **分层**：困难·流程
+- **假设**：volatility pslist/filescan 均无收获的内存镜像，直接对 raw 全文 egrep URL（egrep -a --only-matching 'https?://\S+'（非空白可打印字符））常能捞到浏览器缓存中的云盘链接（dropbox/drive.google.com）；命中 xlsx 后按 zip 解压 grep 字符串表即出 flag——插件失败时的"原始字节检索"兜底。
+- **验证步骤**：1) volatility imageinfo 定 profile；2) pslist/filescan 快扫确认无果；3) egrep -a -o URL 全量导出去重；4) 按可疑域（云盘/ pastebin）逐个访问；5) xlsx 解压 grep flag 特征串。
+- **判定标准**：PASS = 云盘链接可达且含 flag；FAIL = 链接过期（转 Wayback）或 URL 被编码（先过 urldecode）。
+- **裁决词**：待复跑
+- **来源**：WhiteHat Grand Prix 2020 Quals Misc 04｜Writeup 仓（kevin_mitnick.1.raw）｜raw/github-repos/perfectblue/2020_whitehat-grandprix_h_misc04.md
+- **关联**：与 [[内存 dump 中 SSH 凭据链提取（跳板机场景）]]（本批）构成内存取证双路径（结构化插件 vs 原始 grep）；xlsx=zip 解压 grep 与 [[xlsx 零宽字符文档水印溯源（MagicText XOR + 种子重放）]]（本批）的容器操作互通。
+- **熵控预检**：Q1 无重名；Q3 强（全命令在 WP）；Q4 边 2 条。
+
+### 多时区日志归一化排序还原（sonar 十六进制字符流）
+- **分层**：困难·单点
+- **假设**：日志条目附不同时区（America/St_Barthelemy 等）且时间字符串不可直接排序时，嵌在每行的 0xXX hex 字符须按统一时区（如 UTC）的真实时间戳排序才是 flag 正序——TreeMap<ZonedDateTime,Char> 一次遍历即还原；乱序 flag（首字符 F 不对位）是多时区陷阱的典型信号。
+- **验证步骤**：1) grep -oE '0x.{2}' 抽全部 hex 字符；2) 解析每行时区串转 ZoneId；3) LocalDateTime.atZone(zone) 统一坐标；4) TreeMap 按时间排序收集字符；5) 拼接输出。
+- **判定标准**：PASS = 输出以 F 开头格式完整的 flag；FAIL = 仍有乱序（检查夏令时/DST 处理，ZonedDateTime 自动含）。
+- **裁决词**：待复跑
+- **来源**：The Catch 2023 Sonar logs｜vernjan（cz.vernjan.ctf）｜raw/github-repos/vernjan/write-ups/TheCatch2023/02-crew-drills/01-sonar-logs/README.md
+- **关联**：时区归一化是日志审计通用痛点，直接反哺数据安全审计域（与 [[超期账号未回收审计（ExpiryDate × Status 交叉）]] 的日期解析陷阱互证）；hex 字符流抽取与 [[SQL 盲注流量还原（二分阈值拐点法）]]（本批）同为"逐字符还原"型。
+- **熵控预检**：Q1 无重名；Q3 强（Java 还原程序全文在 WP）；Q4 边 1 条。
+
+### 内存 dump 中 SSH 凭据链提取（跳板机场景）
+- **分层**：困难·多段链
+- **假设**：攻击者跳板机的内存镜像中，bash history/进程参数含 "ssh user@ip" 连接串（strings+grep "ssh " 直捞），OpenSSH 私钥以 "BEGIN OPENSSH PRIVATE KEY-----" 明文块残留（grep -A 7 截取）；凭据+私钥可直接登录下一跳基础设施——内存取证的横向移动证据链。
+- **验证步骤**：1) strings dump | grep "ssh " 找目标 IP/用户；2) grep -a -A 7 "BEGIN OPENSSH PRIVATE KEY" 提私钥存 id_rsa；3) chmod 600；4) ssh l33t@<ip> -i id_rsa 登录取 flag。
+- **判定标准**：PASS = 私钥可登录下一跳；FAIL = 私钥截断（扩 -A 行数）或需 passphrase（回内存找口令）。
+- **裁决词**：待复跑
+- **来源**：NahamCon CTF 2023 Raided (Forensics)｜Nightxade（github WP 仓）｜raw/github-repos/daffainfo/2023_nahamcon-ctf_h_raided.md
+- **关联**：与 [[内存 dump 无果时的 strings+URL grep 兜底路径]]（本批）构成内存双径；跳板场景与 [[Windows SAM bootKey 转储 + SilentEye 隐写双密钥链]]（库）的"一跳多证据"互链。同批 VU Cyberthon Blue Baby Shark（Dropbox LAN sync 作 C2 载体、follow stream 收 flag）与本条合并为"C2 通信取证"关联证据。
+- **熵控预检**：Q1 无重名；Q3 强（strings/grep/ssh 命令链在 WP）；Q4 边 2 条。
+
+### 盲注 != 逐字符还原 + bzip2 CRC 30bit 补全 + zip/RAR 头连环修复
+- **分层**：困难·流程
+- **假设**：GET 串盲注（!= 比较 comment AS CHAR 逐位）可用 chr(int(q.split('!=')[-1])) 逐请求还原整段 base64；修复链有三级：①补 = 去 . 修 base64；②bzip2 尾部 CRC 仅 30bit（2bit 爆破+6bit 补零）；③zip Local header 篡改按 PK 对照修、未知容器靠 RAR CMT 注释标识猜格式——"逐字符还原→格式规范级修复"的深水区取证。
+- **验证步骤**：1) strings|grep GET 收集注入串；2) python 逐行抽 != 后数值转字符拼 b64；3) tr -d '.' + echo '=' 补齐解码；4) bzip2 CRC 按 spec 补位解压；5) 逐层 gunzip；6) 修 zip 头解压；7) CMT 标识确认 RAR 修头读注释。
+- **判定标准**：PASS = 五级修复后读出 flag；FAIL = 中途校验失败（按各格式 spec 逐字段比对偏移）。
+- **裁决词**：待复跑
+- **来源**：SUCTF 2018 TNT（sasdf, bookgin 双人解）｜p4 (波兰战队)｜raw/github-repos/balsn/slices/20180526-suctf/tnt.md
+- **关联**：盲注还原与 [[SQL 盲注流量还原（二分阈值拐点法）]]（本批）构成双算法（!=逐字符 vs 二分拐点）；格式连环修复与 [[PNG 结构修复五重奏（CRC 爆破宽高 + IDAT 块名 + 7z→zip 头 + CRC ASCII + 片段全排列）]]（本批）组成"深修谱系"；CMT 标识法是"无头容器识别"通用技巧。
+- **熵控预检**：Q1 与盲注条目已区分（算法+修复链为增量）；Q3 强（脚本与 spec 引用在 WP）；Q4 边 4 条。
+
+
+### EV3 蓝牙传感器流量四模式替换 + 网格重排成图
+- **分层**：困难·多段链
+- **假设**：pklg（LEGO EV3 蓝牙记录）经 tshark -e data 抽出的 hex 流，含四种传感器值特征（07002a00020000c040 型）替换为 0/1/2/3 后剩余数字即 120 列网格的灰度值；逐行定宽渲染成 ASCII/PNG 图即出二维码——"协议枚举值→像素"的冷门载体取证。
+- **验证步骤**：1) tshark -r x.pklg -E separator=, -e data -T fields 抽 data 列；2) sed 四组值替换为 0-3；3) 定 120 宽逐行写网格；4) 数字映射灰度渲染 PNG；5) 扫码。
+- **判定标准**：PASS = 图含可扫 QR；FAIL = 宽度不对（试 119/121）或值域有第五种（扩展替换表）。
+- **裁决词**：待复跑
+- **来源**：HITCON CTF 2018 EV3 Scanner｜Writeup 仓（MWR 风格）｜raw/github-repos/balsn/slices/20181019-hitconctf/ev3-scanner.md
+- **关联**：网格重排成图与 [[Java 文字冒险静态数组提取 + 字符映射像素渲染]]（本批）同族（本条增量＝协议枚举先替换）；蓝牙载体与 [[PT2262 无线信号波形译码（脉冲宽度三元映射）]]（本批）同为物联网侧信道。
+- **熵控预检**：Q1 无重名；Q3 强（tshark/sed 链在 WP）；Q4 边 2 条。
+
+### 多段链：DOC=ZIP + stegseek 爆破 + GBK 注释 + 像素逆变换（中文题）
+- **分层**：困难·多段链
+- **假设**：中文杂项套娃链：DOC 实为 ZIP（改后缀解压得 JPG）+ RAR 注释提示 steghide（stegseek 字典秒爆）+ 爆出 txt 为 GBK 编码（010 显示乱码须记事本/CyberChef 转）+ 解压得 C 代码但注释里写着 Python 原码 + 逆变换 (r-10)/0.01 恢复像素得二维码——五跳链，每跳一坑（GBK 是中国赛特色坑）。
+- **验证步骤**：1) file 识别 DOC→ZIP 改后缀；2) 解压 gogog/ 得 JPG；3) stegseek --crack jpg 字典爆破；4) GBK 转码读密码解 RAR；5) filename.c 注释里取 Python 加密脚本反写（(x-10)/0.01 逆变换）；6) 恢复 PNG 扫码。
+- **判定标准**：PASS = 二维码可扫出 flag；FAIL = 逆变换溢出（clamp 0-255）或 RGBA 通道序错（对照 pix 解包顺序）。
+- **裁决词**：待复跑
+- **来源**：星球题集 2025 大威天龙（朋友投稿）｜Lunatic（A1natas）｜raw/team-blogs/goodlunatic/2025_xingqiu_h_大威天龙.md
+- **关联**：steghide 爆破与 [[steghide 空口令隐写探测]]（库）构成空口令/字典爆破对照；GBK 转码坑与 [[PHP script 标签绕过正则删除上传（PHP5 历史限制）]]（本批 web）同属"本地化环境陷阱"；像素逆变换与 [[冰蝎流量 + 线性光栅图五重采样还原（z 五重切片采样）]]（本批）互链。
+- **熵控预检**：Q1 与库内多段链条目区分（GBK+C 注释双坑为增量）；Q3 强（全链条与脚本在 WP）；Q4 边 3 条。
+
+### PNG→PDF→…→7z 六层套娃容器（polyglot 逐层剥离）
+- **分层**：困难·流程
+- **假设**：pngcheck 报 IEND 后附加数据、binwalk --dd=".*" 层层见 PDF/zip/7z 的文件是 polyglot 套娃：每层用各自工具（binwalk/foremost/7z x）剥离一次，7z 层用 -t7z 显式类型解压，末层 docx（又是 zip）里 grep flag——17KB 长链样本，练"每层识别→剥壳"的耐心活。
+- **验证步骤**：1) pngcheck 找 IEND 后数据；2) binwalk --dd=".*" 全量剥离；3) 逐层 file 识别+对应工具解压（pdf→7z→zip→docx）；4) 解包目录 strings/grep flag。
+- **判定标准**：PASS = 末层命中 flag；FAIL = 中间层有伪魔数（对照 binwalk 十六进制偏移手工 dd）。
+- **裁决词**：待复跑
+- **来源**：TAMUctf 2019 I heard you like files (Misc 306p)｜Writeup 仓（17KB 长文）｜raw/github-repos/Dvd848/2019_i-heard-you-like-files-md_h_i-heard-you-like-files.md
+- **关联**：套娃剥离与 [[密码自递归嵌套 zip + RGB 像素流重绘二维码]]（本批）同族（本条增量＝六层+7z/docx 冷门层）；"每层先识别再剥"纪律与 [[PDF 多层 binwalk 提取 + 解压炸弹规避（-1 尺寸伪文件）]]（本批）互证。
+- **熵控预检**：Q1 与库内嵌套条目区分（六层深度+7z 层为增量）；Q3 强（逐层命令全在 WP）；Q4 边 2 条。
+
+
+### 巨幅图像逐列/逐行循环偏移对齐（np.roll 绿像素锚点搜索）
+- **分层**：困难·流程
+- **假设**：6000x4000 大图若每列藏一段 80 像素绿色锚带（RGB 18,255,2）但位置错乱，对每列 np.roll 循环尝试 0..h 偏移直至锚带全部对齐顶部；列对齐后图变"每行 80 绿像素"错乱，同样方法行对齐即还原——"锚点对齐"两阶段，与光栅采样互补的像素重排机制。
+- **验证步骤**：1) PS/取样器确认锚色 (18,255,2)；2) 逐列 roll 搜索使前 80 行全绿的偏移；3) 输出中间图再逐行 roll 搜索；4) 最终图读 DASCTF{...}。
+- **判定标准**：PASS = 两阶段后出现可读字样；FAIL = 锚色有容差（±2 范围判定）或需先裁剪边框。
+- **裁决词**：待复跑
+- **来源**：天山固网 2025 数字雨（星球题集）｜Lunatic（A1natas）｜raw/team-blogs/goodlunatic/2025_天山固网_h_数字雨.md
+- **关联**：与 [[冰蝎流量 + 线性光栅图五重采样还原（z 五重切片采样）]]（本批）构成像素重排双机制（roll 偏移 vs 切片采样）；引用 b01lers image_adjustments 同型题（选材留痕：跨题源互证）。
+- **熵控预检**：Q1 无重名；Q3 强（两阶段完整脚本在 WP）；Q4 边 2 条。
+
+### PNG Thumbnail Image 残留泄露（alpha 剪切后原图缩略还原）
+- **分层**：简单·单点
+- **假设**：PNG 被"alpha 剪刀"挖去关键区域后，若 exiftool 显示 Thumbnail Image : (Binary data 8609 bytes)，说明缩略图是剪切前生成的——exiftool -b -ThumbnailImage 提取即得完整未剪内容（OPSEC 真实事故同型：截图工具缩略图未清）。
+- **验证步骤**：1) exiftool 全字段查 Thumbnail Image 条目；2) exiftool -b -ThumbnailImage x.png > thumb.jpg；3) 打开缩略图读被剪区域。
+- **判定标准**：PASS = 缩略图含完整邀请码；FAIL = 无缩略图（转 alpha 通道/图层恢复路径）。
+- **裁决词**：待复跑
+- **来源**：Hackvent 2020 Day 01 Happy Hackvent｜Writeup 仓（IceCTF 官方格式）｜raw/github-repos/shiltemann/2020_hackvent_h_day-01-happy-hackvent-2020.md
+- **关联**：与 [[AI 生图 PNG 元数据 Prompt/Negative Prompt 泄密]]、[[EXIF Make 字段跨图序拼接（同字段跨文件 + zsteg 补刀）]]（本批/库）构成元数据泄露三联（缩略图/生成参数/Make 字段）；"删内容不删元数据"是数据销毁合规的反面教材，直连数据安全域。
+- **熵控预检**：Q1 无重名；Q3 强（exiftool 命令在 WP）；Q4 边 2 条。

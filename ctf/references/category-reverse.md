@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "CTF-wiki（reverse 章节）、mukul975/Anthropic-Cybersecurity-Skills（结构化条目范式）、M2 实测复跑（2026-10-15）"
 changelog:
+  - "[2026-11-02] v0.7：蒸馏 P4 批次并入 6 条（reverse_engineering 主标 + 隐写批次路由 1（angr 约束求解），hypothesis 待复跑；07 审阅 + 08 修正批已归零）｜源：ctf-corpus/distill/by-category/reverse/p4-20261030.md + candidates.jsonl（P4 批次报告 06、审阅报告 07、修正简报 08）"
   - "[2026-10-30] v0.6：蒸馏 P3 批次并入 7 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/reverse/p3-20261029.md + candidates.jsonl（P3 批次报告 02） + 修正批同步（46 修正批涉已入库条目，pilot/04-修正简报）（本文件 2 处）"
   - "[2026-10-29] v0.5：蒸馏 P1+P2 批次并入 16 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜源：ctf-corpus/distill 候选池（candidates.jsonl）+ distill/pilot/01-蒸馏批次报告-P2-20261029.md"
   - "[2026-10-15] 初始空壳，等待首个回流条目"
@@ -55,6 +56,12 @@ changelog:
 25. [DOS MZ 哈希截断碰撞（shl 语义误用 + z3 求解）](#dos-mz-哈希截断碰撞shl-语义误用-z3-求解)（hypothesis）
 26. [ICD 规范驱动的遥测二进制解析（ctypes 结构体 + OSINT 收官）](#icd-规范驱动的遥测二进制解析ctypes-结构体-osint-收官)（hypothesis）
 27. [自定义 asm 解释器插桩取密（muffin VM cmp 打点）](#自定义-asm-解释器插桩取密muffin-vm-cmp-打点)（hypothesis）
+28. [百点位运算约束的 angr 覆盖引导求解（afl-qmode 加速）](#百点位运算约束的-angr-覆盖引导求解afl-qmode-加速)（hypothesis）
+29. [UPX 脱壳 + 奇偶位字符串重组比对（name/password 双关）](#upx-脱壳--奇偶位字符串重组比对namepassword-双关)（hypothesis）
+30. [状态机混淆反编译修复（64 槽数据阵 + 内联跳转节）](#状态机混淆反编译修复64-槽数据阵--内联跳转节)（hypothesis）
+31. [.NET ILSpy 逆向 + 前缀构造 + GetHashCode 环境依赖爆破](#net-ilspy-逆向--前缀构造--gethashcode-环境依赖爆破)（hypothesis）
+32. [多层函数族独立检查的约束求解（f1-f4 递归嵌套）](#多层函数族独立检查的约束求解f1-f4-递归嵌套)（hypothesis）
+33. [.NET Harmony 运行时钩子混淆还原（Patch 链逆向）](#net-harmony-运行时钩子混淆还原patch-链逆向)（hypothesis）
 
 ### strings 明文侦察（含输出截断坑）
 - **假设**：未加壳二进制的校验逻辑/flag 往往以明文字符串（提示语、比较目标、格式串）存在于 .rodata → `strings -n 6 <bin> | grep` 关键词是最快的第一轮侦察。
@@ -317,3 +324,64 @@ changelog:
 - **裁决词**：待复跑
 - **来源**：HackVent 2017 Dec 13 muffin_asm｜Shiltemann (Galaxians)｜raw/github-repos/shiltemann/2017_hackvent_h_readme.md（解释器源码与修改点全量在 WP）
 - **关联**：与 [[brainfuck VM 执行轨迹跟踪（解码即抹零）]]同族「解释器侧插桩」；与 [[LEGO NXT 字节码逆向（fantom VM + 位序反排）]]对照——同为自定义 VM，本条走插桩、彼条走反汇编。
+
+### 百点位运算约束的 angr 覆盖引导求解（afl-qmode 加速）
+- **分层**：困难·流程
+- **假设**：非交互 ELF 若包含上百个独立位运算检查（buf[i]>>1&256==0x21 型）且正确输入触发服务器侧 get_flag（本地无库），IDA 逐块人工解不现实；angr 符号执行 + afl 覆盖引导（qmode）可自动收敛满足全部约束的输入——约束求解的工程化路径。
+- **验证步骤**：1) IDA 图视图确认百级离散检查块与中心 get_flag 调用；2) angr Project 加载，find=正确路径地址/avoid=Goodbye 块；3) 接 afl-qmode 加速状态空间探索；4) solver 求出 300 字节输入；5) 本地输入验证全部检查通过后交服务器换 flag。
+- **判定标准**：PASS = 求出的输入使程序走到 get_flag 路径（远端回 flag）；FAIL = 约束含不可满足位（人工抽检个别 check 修正）或超时（提高 afl 并行度）。
+- **裁决词**：待复跑
+- **来源**：EKOPARTY 2016 rev250 Fuckzing reverse｜Adam Van Prooyen｜raw/github-repos/pwning/2016_ekoparty_h_readme_3.md
+- **关联**：与 LCTF 2017 use your ida（ponce 探路后 anr 收割，六星战队 WP，本批选材留痕）同型互证；约束求解思路与 reverse 库既有条目（反混淆/黑盒约束）互补；服务器侧 flag 模式提示"本地可验证性"边界。
+- **熵控预检**：Q1 无重名；Q3 中（方法论与图证据在 WP，完整 exp 脚本未附）；Q4 边 2 条。
+
+
+### UPX 脱壳 + 奇偶位字符串重组比对（name/password 双关）
+- **分层**：困难·单点
+- **假设**：PE32 控制台程序 upx -d 秒脱壳后，Ghidra 可见 strcmp 目标实为输入的偶数位拼接重组（array[i%2==0] 取 array[i+1]），凑出 "BumBumWithTheTumTum" 后密码段由 array[17/8/3/9/13/14] 散位拼装——重组规则藏在循环里，直接读"密码常量"会扑空。
+- **验证步骤**：1) upx -d 脱壳；2) Ghidra 定位 main 的双 scanf 与 strlen 分支；3) 逆向偶数位重组规则构造 name；4) 按散位索引取 name 字符拼 password；5) 程序内验证。
+- **判定标准**：PASS = 程序输出取件成功；FAIL = 重组起点不同（奇偶翻转重试）。
+- **裁决词**：待复跑
+- **来源**：KipodAfterFree CTF 2019 Package (Reversing 15p)｜Writeup 仓（MWR 风格）｜raw/github-repos/Dvd848/2019_package-md_h_package.md
+- **关联**：散位拼装与 [[多层函数族独立检查的约束求解（f1-f4 递归嵌套）]]（本批）同属"输入位置重排"族；UPX 前置脱壳与库内壳条目互补。
+- **熵控预检**：Q1 无重名；Q3 强（重组逻辑+Ghidra 输出在 WP）；Q4 边 1 条。
+
+### 状态机混淆反编译修复（64 槽数据阵 + 内联跳转节）
+- **分层**：困难·流程
+- **假设**：main 被 Ghidra 反编译成一坨 while(True)+fct 值分发时，真实逻辑是"状态机+64 槽数据阵 DAT"的自修改流：逐个 fct 值（0x6ca7afa7 等魔数）手工抽出内联函数（改 DAT、算新 state、跳 DAT[9]），重命名 strangeXor/rol1f/ror1f 后状态图可读，输入检查实为 DAT 阵上的一串变换——"分发表即函数表"的反混淆方法论。
+- **验证步骤**：1) 修 Ghidra 反汇编错误（函数签名/调用错位）；2) 逐 fct 魔数抽内联函数建表；3) 画状态转移图；4) 从初值 0x13/DAT[9] 模拟执行；5) 逆推满足全部检查的输入。
+- **判定标准**：PASS = 模拟执行通过并还原 flag；FAIL = 状态有自修改（每步后重读 DAT）。
+- **裁决词**：待复跑
+- **来源**：DGHack 2021 Clutter（Out of clutter, find simplicity）｜Writeup 仓｜raw/github-repos/apoirrier/2021_dghack_h_clutter.md
+- **关联**：状态机反混淆与 [[百点位运算约束的 angr 覆盖引导求解（afl-qmode 加速）]]（本批）构成"人工修复 vs 自动求解"对照；魔数 0x6a09e667（SHA-256 常量）提示出题人彩蛋，可作识别线索。
+- **熵控预检**：Q1 无重名；Q3 强（全部内联函数清单在 WP）；Q4 边 1 条。
+
+### .NET ILSpy 逆向 + 前缀构造 + GetHashCode 环境依赖爆破
+- **分层**：困难·多段链
+- **假设**：.NET PE（Mono assembly）用 ILSpy 反编译后，检查逻辑若含 array[n].GetHashCode()%10（依赖运行时的字符串哈希），需在 .NET Framework 目标环境枚举字母表找匹配位；其余位由 base64 前缀串模板（"SFYyMH"+...）直接反推输入字符——部分已知明文+散位爆破的混合求解。
+- **验证步骤**：1) ILSpy（Avalonia Linux 版）反编译得 Main；2) 偶数位重组凑 "BumBumWithTheTumTum"（或直接前缀）；3) 模板串散位填入 array[17/3/9/13/14]；4) 对 GetHashCode 位枚举 a-z/A-Z/0-9 至哈希匹配；5) 拼整串 base64 解码得 flag。
+- **判定标准**：PASS = 解码出 HV20{...}；FAIL = 环境哈希不一致（mono vs .NET Framework 差异，须在目标 runtime 枚举）。
+- **裁决词**：待复跑
+- **来源**：Hackvent 2020 Day 07 Bad Morals｜Writeup 仓（IceCTF 官方格式）｜raw/github-repos/shiltemann/2020_hackvent_h_day-07-bad-morals.md
+- **关联**：散位拼装与 [[UPX 脱壳 + 奇偶位字符串重组比对（name/password 双关）]]（本批）同族双样本（本条 .NET+哈希依赖增量）；"运行时依赖"意识与 [[ELF 段清零对抗（.data/.rodata 清零 + .text 清零两条路）]]（本批 pwn）的编译器版本锁定同属环境敏感型。
+- **熵控预检**：Q1 无重名；Q3 强（反编译源+模板串在 WP）；Q4 边 2 条。
+
+### 多层函数族独立检查的约束求解（f1-f4 递归嵌套）
+- **分层**：困难·流程
+- **假设**：main 里成串的 uVar2 = f2(user_input[32],0xf) 嵌套 if（每字符独立调 f1-f4 判断）时，输入 32 字符互不耦合——逐字符独立求解比整体符号执行快得多；f 系函数内部虽有异或/移位/查表，但单字符输入空间仅 256，逐位爆破即过全部检查（NoOp 干扰函数先识别剔除）。
+- **验证步骤**：1) Ghidra 看 main 的检查序列（user_input[i] 与魔数参数）；2) 分析 f1-f4 实现与 NoOp 干扰；3) for i in range(32): for c in chars: 断言 f(user_input[i], par)==0；4) 拼接通过字符；5) 程序验证。
+- **判定标准**：PASS = 程序输出正确；FAIL = 检查间有顺序依赖（换 z3 整体求解）或字符表不含特殊符号（扩字符集）。
+- **裁决词**：待复跑
+- **来源**：Matrix CTF 2021 Modus Tollens (Reversing 100p)｜Writeup 仓（32KB 长文）｜raw/github-repos/Dvd848/2021_modus-tollens-md_h_modus-tollens.md
+- **关联**：独立检查逐位爆破与 [[百点位运算约束的 angr 覆盖引导求解（afl-qmode 加速）]]（本批）构成双路径（anrr 自动 vs 逐位手爆），按耦合度选路；NoOp 剔除与 [[状态机混淆反编译修复（64 槽数据阵 + 内联跳转节）]] 的干扰函数识别互证。
+- **熵控预检**：Q1 与 angr 条目区分（耦合度判断为增量）；Q3 强（函数分析与爆破脚本在 WP）；Q4 边 2 条。
+
+### .NET Harmony 运行时钩子混淆还原（Patch 链逆向）
+- **分层**：超级难·流程
+- **假设**：.NET flag checker 若在启动时用 Harmony 库 Patch 检查函数（前缀替换为假函数 NUFFRA/GRONKULLA 等，全部瑞典家具名变量），静态读 checks.cs 会看到"正确"逻辑实际从不执行；逆向须沿 Harmony.Patch(method, prefix) 映射表把每个被钩方法还原成真实前缀实现，再用 z3 对还原后的约束求解——运行时 AOP 混淆的标准还原法。
+- **验证步骤**：1) ILSpy/dnSpy 反编译定位 VARDAGEN() 的 Patch 表；2) 逐条还原 method→prefix 映射（FYRKANTIG→NUFFRA 等）；3) 重写等价无钩版本；4) z3 建 0x00-0x7f 域约束；5) solve 得 flag。
+- **判定标准**：PASS = 还原版求解出 flag；FAIL = 还有 finalizer/postfix 钩（补全 Patch 参数第三位）。
+- **裁决词**：待复跑
+- **来源**：Google CTF 2020 DotNet（tkoa & cts 解）｜Writeup 仓｜raw/github-repos/perfectblue/2020_googlectf_x_dotnet.md
+- **关联**：AOP 钩子还原与 [[状态机混淆反编译修复（64 槽数据阵 + 内联跳转节）]]（本批）构成 .NET 双混淆对照（Harmony vs 状态机）；z3 求解收官与 [[百点位运算约束的 angr 覆盖引导求解（afl-qmode 加速）]] 互链。
+- **熵控预检**：Q1 无重名（库内无 Harmony 条目）；Q3 中（Patch 表与思路在 WP，完整 z3 脚本未附）；Q4 边 2 条。

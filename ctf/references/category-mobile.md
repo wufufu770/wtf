@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "ctf-corpus 蒸馏层 P1+P2 批次（distill/by-category/mobile），原始 WP 见 ctf-corpus/raw/ 与 meta/register.jsonl"
 changelog:
+  - "[2026-11-02] v0.7：蒸馏 P4 批次并入 5 条（mobile_security 主标全成条，hypothesis 待复跑；07 审阅 + 08 修正批已归零）｜源：ctf-corpus/distill/by-category/mobile/p4-20261030.md + candidates.jsonl（P4 批次报告 06、审阅报告 07、修正简报 08）"
   - "[2026-10-30] v0.6：蒸馏 P3 批次并入 4 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/mobile/p3-20261029.md + candidates.jsonl（P3 批次报告 02） + 修正批同步（46 修正批涉已入库条目，pilot/04-修正简报）（本文件 2 处外科式：D100 推断补全标注 / D101 表述对齐原文）"
   - "[2026-10-30] 回流复跑轮：7 条全裁决（InjuredAndroid PASS——开源全源码四数据面全证+firebase 双端点活体 200；其余 6 条 INCONCLUSIVE 缺 APK 原件/物理镜像/RE 工具链，缺口清单入条目）；证据归档 shared/wtf-reflight-evidence-20261030/"
   - "[2026-10-29] v0.5 新库：蒸馏 P1+P2 批次建库并入 7 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜11→10 库映射见 ctf-wp 采集规划 §4.4"
@@ -33,6 +34,11 @@ changelog:
 9. [key.db 明文密钥 + so 层 DES + 反调试对抗（PNG 隐写收官）](#keydb-明文密钥-so-层-des-反调试对抗png-隐写收官)（hypothesis）
 10. [多 APK 静态分析流水线（dex2jar→jd-gui/Luyten 检索式下钻）](#多-apk-静态分析流水线dex2jarjd-guiluyten-检索式下钻)（hypothesis）
 11. [Flutter kernel_blob 源码级逆向（Dart 快照字符串考古）](#flutter-kernel_blob-源码级逆向dart-快照字符串考古)（hypothesis）
+12. [多 Activity 引导链 + smali 层 key 替换喂 native 校验](#多-activity-引导链--smali-层-key-替换喂-native-校验)（hypothesis）
+13. [Android KeyStore AES 本地加密文件提取（secret.txt 密文 + hook 取 key）](#android-keystore-aes-本地加密文件提取secrettxt-密文--hook-取-key)（hypothesis）
+14. [WebView Deep Link 白名单绕过（intent data 伪造 Referer）](#webview-deep-link-白名单绕过intent-data-伪造-referer)（hypothesis）
+15. [无权限 BroadcastReceiver 伪造 + 本地 SQLite 注入爆破凭据](#无权限-broadcastreceiver-伪造--本地-sqlite-注入爆破凭据)（hypothesis）
+16. [assets 多目录密钥聚合解密链（RC4 + JNI so 混合）](#assets-多目录密钥聚合解密链rc4--jni-so-混合)（hypothesis）
 
 ### Xamarin AOT apk 提取 .NET PE（libmonodroid bundle）
 - **分层**：超级难档·失败样本/陷阱
@@ -162,3 +168,53 @@ changelog:
 - **裁决词**：待复跑
 - **来源**：Mossad CTF 2019 Challenge #1｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2019_challenge1-md_h_challenge1.md（kernel_blob 提取过程与 token.dart 源在 WP）
 - **关联**：与 [[Android Mono 运行时反混淆（魔改 opcode 表 + ILSpy 还原）]] 同族「非 Java 运行时的 APK 业务逆向」；字符串考古与 [[多类型泥沙文件隐私泄露普查（strings 降序 + whisper 语音转写）]] 共享 strings 优先直觉。
+
+### 多 Activity 引导链 + smali 层 key 替换喂 native 校验
+- **分层**：困难·多段链
+- **假设**：AndroidManifest 声明的 FlagActivity/UnreachableActivity 即使 exported=false，adb root 后 am start -n 仍可直启；FlagActivity 显示的符号串解码是"unreachable"引导跳 UnreachableActivity；其内 native getKey("fakekey...") 是真校验——jadx 不可改源码，apktool d 反编译后改 smali 里 const-string 假 key 为正确值重打包，native 校验通过吐 flag——"组件直启→字符串引导→smali patch→native"四跳。
+- **验证步骤**：1) 改后缀 .apk 装模拟器；2) jadx 读 Manifest 与 Activity 结构；3) adb root; am start -n io.fl1tz.ctf/.FlagActivity 读符号串解码；4) am start UnreachableActivity 读 "pass it to the native function"；5) apktool d 改 smali 的 const-string v3；6) apktool b + 签名重装读 flag。
+- **判定标准**：PASS = 重打包后 native 校验通过；FAIL = 签名校验（删 META-INF 重签）或 key 计算在 so 内（frida hook 传参观察）。
+- **裁决词**：待复跑
+- **来源**：FL1TZ CTF 2025 FLT1TZ (Mobile)｜mahdi（infosecwriteups）｜raw/github-repos/El-Mehdi-Dridi/Mobile-CTF-Tasks/FL1TZ.md
+- **关联**：exported=false 与 [[无权限 BroadcastReceiver 伪造 + 本地 SQLite 注入爆破凭据]]（本批）构成组件暴露双样本（显式 export 缺失 vs 权限缺失）；smali patch 与 [[key.db 明文密钥 + so 层 DES + 反调试对抗（PNG 隐写收官）]]（库）的 native 层对抗互补。
+- **熵控预检**：Q1 无重名；Q3 强（命令链+smali 行号在 WP）；Q4 边 2 条。
+
+### Android KeyStore AES 本地加密文件提取（secret.txt 密文 + hook 取 key）
+- **分层**：困难·流程
+- **假设**：Kotlin 应用把用户输入 AES 加密存 filesDir/secret.txt（CryptoManager.encrypt），key 由 AndroidKeyStore 生成不可导出；但加密是本地 oracle——输入已知明文得密文，且 key 可在运行时 hook（或直接调用 app 内 encrypt 接口构造解密 oracle）：自写 exp APK 复用其 CryptoManager 类（同 UID/签名限制下用 hook 框架）或 frida 拦截 getKey 后 Cipher 解密——"不可导出密钥的旁路使用"。
+- **验证步骤**：1) jadx 定位 CryptoManager 与 secret.txt 写入路径；2) 运行 app 加密已知明文验证 oracle；3) frida hook createCipher/getKey 时机拿 Cipher 实例；4) 以 DECRYPT_MODE 重放 secret.txt 密文；5) 输出原 secret。
+- **判定标准**：PASS = 解出 secret.txt 原文（含 flag）；FAIL = KeyStore 绑定签名（exp 需同签名或用 objection 内存调用）。
+- **裁决词**：待复跑
+- **来源**：BSidesTLV CTF 2023 KeyHunter (Mobile 464p)｜Writeup 仓（17KB 长文）｜raw/github-repos/evyatar9/Writeups/KeyHunter.md
+- **关联**：与 [[key.db 明文密钥 + so 层 DES + 反调试对抗（PNG 隐写收官）]]（库）构成移动端密钥管理对照（KeyStore 硬件级 vs 明文 key.db）；本地 oracle 思路与 [[AES-CBC 位翻转伪造 is_admin（debug 泄露结构定位）]]（本批 crypto）同属"不破算法破实现"。
+- **熵控预检**：Q1 无重名；Q3 中（结构与分析在 WP，hook 脚本细节长文后半）；Q4 边 2 条。
+
+### WebView Deep Link 白名单绕过（intent data 伪造 Referer）
+- **分层**：困难·多段链
+- **假设**：单 Activity 应用以三个 intent-filter（http/自定义 scheme）注册 deep link，Flag 页校验"来自应用内部"实为读 launch intent 的 data URI/Referer；adb am start -W -a VIEW -d "<合法URL>" 直启过第一层后，源码里硬编码 URL 的 WebView loadUrl 若以 intent.getStringExtra 取注入参数（或 extras 携带），构造带目标参数的 intent 即让 WebView 载入本地 flag 资源——deep link 面是 Web 与 Mobile 的跨界攻击面。
+- **验证步骤**：1) MobSF 扫 + 读 Manifest 三 filter；2) am start 测 http scheme 解析；3) 读 MainActivity 的 WebView 构造与 getData/getExtras 流；4) 构造 intent data/extras 指向 flag 内容；5) am start 触发读 flag。
+- **判定标准**：PASS = WebView 渲染 flag 资源；FAIL = 校验 host 精确匹配（试 intent extras 变体 / scheme 混淆）。
+- **裁决词**：待复跑
+- **来源**：Hacker101 CTF 2026 Intentional Exercise（Android Level13）｜infosecwriteups（前作同系列）｜raw/team-blogs/medium/tmc222/intentional-exercise.md
+- **关联**：与 [[路径段作 TLD 的解析歧义 SSRF（nip.io 回环直达内网目录）]]（本批 web）构成 URL 解析歧义双域（服务端代理 vs 客户端 deep link）；WebView 远程调试面与 [[node-static CVE-2023-26111 路径穿越 + --inspect 调试端口 RCE]]（本批）的调试端口族呼应。
+- **熵控预检**：Q1 与库内 WebView 条目区分（intent data 白名单绕过为增量）；Q3 中（流程在 WP，intent 细节按图索骥）；Q4 边 2 条。
+
+### 无权限 BroadcastReceiver 伪造 + 本地 SQLite 注入爆破凭据
+- **分层**：困难·多段链
+- **假设**：registerReceiver(LoginReceiver) 未要求 permission 且 action 公开时，任意应用可发送伪造广播（username/password extras）；onReceive 调 LocalDatabaseHelper.checkLogin 的 SQL 为拼接串（"SELECT ... WHERE username='" + u + "'..."），本地 SQLite 注入（' OR 1=1 -- + LIMIT 控制）让广播回显账号表；甚至注入 UNION 直接取 password 字段——"组件暴露 × 注入"的移动端组合拳。
+- **验证步骤**：1) d2j-dex2jar + jd-gui 读注册与 onReceive；2) 写 exp APK sendBroadcast(action, extras 注入串)；3) 收 OUTPUTINTENT 广播读 msg；4) 注入 UNION SELECT 逐行取凭据；5) 提交服务端换 flag。
+- **判定标准**：PASS = 回显数据完整；FAIL = 输出限截断（substring 分段）或 SQL 转义（双写引号绕过）。
+- **裁决词**：待复跑
+- **来源**：Google CTF 2016 Little Bobby Application (Mobile 250p/24 solved)｜bburky｜raw/github-repos/ctfs/write-ups-2016/little-bobby-application-250.md
+- **关联**：与 [[MongoDB NoSQL 操作符注入登录（{"$gt":""} 空串通配）]]（本批 web）构成"注入面三库"（SQLite/NoSQL/SQL）；广播无权限与 [[多 Activity 引导链 + smali 层 key 替换喂 native 校验]]（本批）的组件暴露族互链。
+- **熵控预检**：Q1 无重名；Q3 强（exp 广播代码+注入串在 WP）；Q4 边 2 条。
+
+### assets 多目录密钥聚合解密链（RC4 + JNI so 混合）
+- **分层**：困难·流程
+- **假设**：APK assets 下 flag/key_0..key_4 目录各含 ciphertext.js（RC4 加密 JS）与 key_%i.enc，flag 目录的 code.js 实现 RC4；五 key 相互解锁（JNI 层 so 参与派生），静态分析逐目录逆推：dex2jar（非官方 fork）→ JD-GUI 读 FlagActivity 的聚合逻辑 → 按 key_i 依赖序逐个解密（RC4 密钥来自前一目录解密产物/JNI 返回值）→ 最终解 flag.enc——移动端"密钥环"结构。
+- **验证步骤**：1) unzip apk 列 assets 可疑目录；2) dex2jar 双 dex + JD-GUI 存源；3) 读 code.js 确认 RC4 参数；4) 按 FlagActivity 依赖序解 key_0..4（JNI 层用 IDA 交叉验证）；5) 五 key 拼 flag 解密。
+- **判定标准**：PASS = flag.enc 解出可读；FAIL = 依赖环断裂（frida 动态跟踪 JNI 返回）。
+- **裁决词**：待复跑
+- **来源**：Trend Micro CTF 2020 Mobile 2 Keybox（23KB 长文）｜Writeup 仓｜raw/github-repos/Hong5489/TrendMicroCTF2020/Keybox.md
+- **关联**：密钥环与 [[密码自递归嵌套 zip + RGB 像素流重绘二维码]]（本批 forensics）的"自解锁容器"同型；RC4 实现识别与 [[三图尾随 zip 拼接 + base 家族自动侦测套娃解码]]（本批）互链编码族。
+- **熵控预检**：Q1 无重名；Q3 中（结构与多步在 WP，全部脚本未内联）；Q4 边 2 条。

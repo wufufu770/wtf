@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "ctf-corpus 蒸馏层 P1+P2 批次（distill/by-category/encoding），原始 WP 见 ctf-corpus/raw/ 与 meta/register.jsonl"
 changelog:
+  - "[2026-11-02] v0.7：蒸馏 P4 批次并入 3 条（encoding_analysis 主标，hypothesis 待复跑；07 审阅 + 08 修正批已归零）｜源：ctf-corpus/distill/by-category/encoding/p4-20261030.md + candidates.jsonl（P4 批次报告 06、审阅报告 07、修正简报 08）"
   - "[2026-10-30] v0.6：蒸馏 P3 批次并入 5 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/encoding/p3-20261029.md + candidates.jsonl（P3 批次报告 02）"
   - "[2026-10-30] 回流复跑轮：5 条全裁决（Noita/Vigenère/Bacon 三条 v3 求解器全 PASS——B 初版求解器缺陷已按 raw 原文重写修复，A 接手轮亲复跑全复现；gslab note/Astrolabe 二条数学核心部分复算成立但端到端素材缺失 → INCONCLUSIVE）；证据归档 shared/wtf-reflight-evidence-20261030/"
   - "[2026-10-29] v0.5 新库：蒸馏 P1+P2 批次建库并入 5 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜11→10 库映射见 ctf-wp 采集规划 §4.4"
@@ -32,6 +33,9 @@ changelog:
 8. [摩斯无分隔符回溯分割（字典约束穷举）](#摩斯无分隔符回溯分割字典约束穷举)（hypothesis）
 9. [PyPI 版本考古 + 七层编码链（b32→b64→gzip→binary→binary→hex→b85）](#pypi-版本考古-七层编码链b32b64gzipbinarybinaryhexb85)（hypothesis）
 10. [PE 头三处修复救活废件（Machine/OEP/段名 UPX0-1）](#pe-头三处修复救活废件machineoep段名-upx0-1)（hypothesis）
+11. [行星符号数字替换 + TAPIR 密码表解码（东德斯塔西遗留）](#行星符号数字替换--tapir-密码表解码东德斯塔西遗留)（hypothesis）
+12. [交互题数值答案的 ASCII 侧信道编码（最短路→字符→base64）](#交互题数值答案的-ascii-侧信道编码最短路字符base64)（hypothesis）
+13. [摩尔斯电码 + base36 组合信道（0-9A-Z 字母表识别）](#摩尔斯电码--base36-组合信道0-9a-z-字母表识别)（hypothesis）
 
 ### 自定义字母表 base64（内存 dump 定位表）
 - **分层**：困难档·单点
@@ -142,3 +146,33 @@ changelog:
 - **裁决词**：待复跑
 - **来源**：WhiteHat GrandPrix 2018 rev04｜perfect blue (战队)｜raw/github-repos/perfectblue/2018_whitehat-grandprix_h_rev04.md（三处损坏点与 UPX 3.08 佐证在 WP）
 - **关联**：与 [[OLE/Word97 头修复 + foremost 嵌套提取]] 同族「容器头修复前置」；脱壳后分析与 [[密码算法大礼包识别（常量指纹 + F5 恢复 + SM4 收官）]] 的常量指纹法互补。
+
+### 行星符号数字替换 + TAPIR 密码表解码（东德斯塔西遗留）
+- **分层**：困难·多段链
+- **假设**：天文符号流（♆♀♇⊕）若为 1930-2006 九行星符号，按行星序号（☿1..♇9）替换得 5 位十进制组；每 5 位组按首位行号+后 4 位列号查 TAPIR 密码表（东德斯塔西真实用表，0=Zwischenraum 空格）即出德文/英文明文——历史密码档案的"符号→数字→查表"三跳。
+- **验证步骤**：1) 建 planet→num 映射（☿♀⊕♂♃♄♅♆♇ = 1-9）；2) 符号流替换成数字串；3) 按 5 位切片（首位=行，后 4 位=列）；4) 查 TAPIR 表（WP 附全表）逐字翻译；5) 拼读 flag。
+- **判定标准**：PASS = 解出可读英文；FAIL = 行列切位（5 位组内换位）或表版本差异（对照 wiki TAPIR 原表）。
+- **裁决词**：待复跑
+- **来源**：InternetWache CTF 2016 Crypto 50 Crypto-Pirat｜Writeup 仓（IceCTF 官方格式）｜raw/github-repos/hackthissite/2016_internetwache-ctf_h_crypto50.md
+- **关联**：历史密码（TAPIR/恩尼格玛族）与库内古典密码条目互补（本条增量＝符号集+真实档案表）；提示词解读（"9 planets 1930-2006"）是谜面侦察通用功。
+- **熵控预检**：Q1 无重名；Q3 强（映射表+TAPIR 全表在 WP）；Q4 边 1 条。
+
+### 交互题数值答案的 ASCII 侧信道编码（最短路→字符→base64）
+- **分层**：困难·多段链
+- **假设**：100 关交互算法题（7x7 网格最短路和）若每关答案恰落在 32-126 可见 ASCII 域，逐关答案 chr() 拼接即是 base64 串，解码得 flag——出题人把"答案格式"本身当作编码载体，服务端 Congratz 提示后别急着退出，回看全部数值。
+- **验证步骤**：1) DFS 三方向递归求最小路径和（剪枝 val+mx>best）；2) 100 关自动化循环收全部答案；3) 答案逐个 chr 拼串；4) base64 -d 解码。
+- **判定标准**：PASS = 拼串是合法 base64 且解码可读；FAIL = 答案域超 ASCII（检查网格数值范围）或有关卡超时（换 Dijkstra）。
+- **裁决词**：待复跑
+- **来源**：Codegate CTF 2019 Preliminary algo_auth (Easy algorithm)｜kaibro｜raw/github-repos/balsn/slices/20190126-codegatectf/algo_auth.md
+- **关联**："答案即编码"范式与 [[DTMF 双音多频拨号音译码 + 十进制流多跳解码]]（本批 forensics）同为多跳编码族；交互自动化与 [[ReCaptcha 并发窗口绕过（token 复用 + 字典喷洒）]]（本批 web）的会话管理互通。
+- **熵控预检**：Q1 无重名；Q3 强（DFS 代码全在 WP）；Q4 边 1 条。
+
+### 摩尔斯电码 + base36 组合信道（0-9A-Z 字母表识别）
+- **分层**：超级难·单点
+- **假设**：socket 服务下发点划流，摩尔斯解码后得到 0-9A-Z 混排长串（既非 b64 又非 b32）时，字母表恰 36 个提示 base36；解码得明文问题（What is SHA256(grapefruit1234)?），答案按同格式（明文→base36→摩尔斯）回传——双向自定义信道协议的完整闭环。
+- **验证步骤**：1) 收流按点划/间隔切分查摩尔斯表；2) 识别 0-9A-Z 字母表→base36 int(s,36) 解码；3) 解出问题计算答案（hashlib）；4) 逆过程编码回发；5) 收 flag。
+- **判定标准**：PASS = 服务端返回 flag；FAIL = 摩尔斯分隔符歧义（单空格字母/三空格词）或 base36 大小写敏感（统一大写）。
+- **裁决词**：待复跑
+- **来源**：PlaidCTF 2016 morset (Misc 50p/86 solved)｜p4 (波兰战队)｜raw/github-repos/p4/2016_plaid-ctf_x_morset.md
+- **关联**：摩尔斯与 [[PT2262 无线信号波形译码（脉冲宽度三元映射）]]、[[Flash dump MKV 双音轨 + 2000Hz 正弦波摩尔斯 + base32 落图]]（本批）构成摩尔斯三载体（点划文本/波形/音轨）；"字母表基数识别"是编码分析域通用启发式（2/8/16/32/36/58/64/85 速查）。
+- **熵控预检**：Q1 无重名；Q3 中（思路+样例在 WP，doit.py 未内联）；Q4 边 2 条。

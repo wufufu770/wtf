@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "CTF-wiki（crypto 章节）、PayloadsAllTheThings（RSA）、M2 实测复跑（2026-10-15）"
 changelog:
+  - "[2026-11-02] v0.7：蒸馏 P4 批次并入 9 条（cryptography 主标 + 隐写批次路由 1（partial key exposure），hypothesis 待复跑；07 审阅 + 08 修正批已归零）｜源：ctf-corpus/distill/by-category/crypto/p4-20261030.md + candidates.jsonl（P4 批次报告 06、审阅报告 07、修正简报 08）"
   - "[2026-10-30] v0.6：蒸馏 P3 批次并入 8 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/crypto/p3-20261029.md + candidates.jsonl（P3 批次报告 02） + 修正批同步（46 修正批涉已入库条目，pilot/04-修正简报）（本文件 2 处）"
   - "[2026-10-29] v0.5：蒸馏 P1+P2 批次并入 29 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜源：ctf-corpus/distill 候选池（candidates.jsonl）+ distill/pilot/01-蒸馏批次报告-P2-20261029.md"
   - "[2026-10-15] 初始空壳，等待首个回流条目"
@@ -68,6 +69,15 @@ changelog:
 39. [PKI 中间 CA 证书链伪造（mTLS 客户端认证旁路）](#pki-中间-ca-证书链伪造mtls-客户端认证旁路)（hypothesis）
 40. [硬件指纹口令逆向（盘符序列+MAC+BIOS SN 拼装）](#硬件指纹口令逆向盘符序列macbios-sn-拼装)（hypothesis）
 41. [游戏源码 diff 钓鱼后门（定种子 RNG + RC2 解密）](#游戏源码-diff-钓鱼后门定种子-rng-rc2-解密)（hypothesis）
+42. [模 2^64 次幂开方链（Tonelli-Shanks + 单位根幂枚举收敛）](#模-264-次幂开方链tonelli-shanks--单位根幂枚举收敛)（hypothesis）
+43. [模逆求解 + 加 p 平移枚举还原 ASCII（divm 短除陷阱）](#模逆求解--加-p-平移枚举还原-asciidivm-短除陷阱)（hypothesis）
+44. [SHA1 选择性碰撞工程应用（sha1collider 构造同哈希异内容双 QR）](#sha1-选择性碰撞工程应用sha1collider-构造同哈希异内容双-qr)（hypothesis）
+45. [AES-CBC 位翻转伪造 is_admin（debug 泄露结构定位）](#aes-cbc-位翻转伪造-is_admindebug-泄露结构定位)（hypothesis）
+46. [截屏取证逆向 + glibc rand 种子重放（栈溢出控种子）](#截屏取证逆向--glibc-rand-种子重放栈溢出控种子)（hypothesis）
+47. [RSA 密文数字置换混淆（10! 枚举逆置换）](#rsa-密文数字置换混淆10-枚举逆置换)（hypothesis）
+48. [动态步长 XOR 的最低位恢复攻击（奇偶驱动自同步）](#动态步长-xor-的最低位恢复攻击奇偶驱动自同步)（hypothesis）
+49. [RSA 故障签名挖掘 + 部分 d 低位恢复（n/4 LSB 定理）](#rsa-故障签名挖掘--部分-d-低位恢复n4-lsb-定理)（hypothesis）
+50. [四字符分组独立哈希的逐组爆破（弱结构分治）](#四字符分组独立哈希的逐组爆破弱结构分治)（hypothesis）
 
 ### RSA 共模攻击（Håstad）
 - **假设**：同一明文 m 用同一模数 n、两个互质指数 e1/e2 加密（c1=m^e1 mod n, c2=m^e2 mod n）→ 由扩展欧里得找 a,b 使 a·e1+b·e2=1，则 m = c1^a · c2^b mod n，无需分解 n。
@@ -451,3 +461,95 @@ changelog:
 - **裁决词**：待复跑
 - **来源**：Check Point CSA 2020 Stateful Keen｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2020_stateful-keen-md_h_stateful-keen.md（diff 与 RC2 集成代码全量在 WP）
 - **关联**：与 [[编译期 CFG 深度乘积水印提取（小素数编码）]] 共享「开源基线 diff 出后门」方法论；确定性 RNG 与 [[rand() 未播种的服务端门禁（SSL 回显可预测）]] 同属固定种子缺陷族。
+
+### 模 2^64 次幂开方链（Tonelli-Shanks + 单位根幂枚举收敛）
+- **分层**：困难·流程
+- **假设**：ct = m^(2^64) mod p（p-1 = 2^30·q）时解不唯一：Tonelli-Shanks 求一个平方根起点 m，再乘以 2^30 次本原单位根 k 的幂（k 由 (p-1) 反复开方得非二次剩余），枚举 m·k^r 全解空间中满足 TWCTF{ 前缀与 42 字符长度约束者即真值——"多解空间+格式约束收敛"范式。
+- **验证步骤**：1) 分解 p-1 得 2 的幂次；2) Tonelli-Shanks 递降 64 层取一个 m；3) 求 2^30 次单位根 k（非 QR 即不可再开方）；4) 并行枚举 r 使 m·k^r 解码满足前缀/长度；5) 输出 flag。
+- **判定标准**：PASS = 枚举命中前缀完整串；FAIL = k 求解次幂不足（按 2^t 调整）或约束不满足（放宽长度尝试）。
+- **裁决词**：待复跑
+- **来源**：TWCTF 2020 sqrt (216p/45 solved)｜f0xtr0t｜raw/github-repos/pwning/2020_twctf_h_sqrt.md
+- **关联**：Tonelli-Shanks 与库内 Rabin 解密类条目互链（同为模平方根族）；"多解+约束收敛"与 [[RSA 故障签名挖掘 + 部分 d 低位恢复（n/4 LSB 定理）]]（本批）同型。
+- **熵控预检**：Q1 无重名；Q3 强（双脚本+Rust 并行版在 WP）；Q4 边 1 条。
+
+### 模逆求解 + 加 p 平移枚举还原 ASCII（divm 短除陷阱）
+- **分层**：困难·单点
+- **假设**：c = a·b mod p 已知 b 求 a 时 gmpy2.divm 直接给最小非负解，但解码可能非 ASCII——模运算下 a+kp 均为解，逐次加 p 平移枚举直至串以已知前缀（HV18）开头即真值；"%x" 补零奇偶位是 int→bytes 的坑点。
+- **验证步骤**：1) a0 = gmpy2.divm(c, b, p)；2) int_to_text(zfill 补齐)；3) while not pt.startswith('HV18'): a += p；4) 输出。
+- **判定标准**：PASS = 前缀命中且余下可读；FAIL = 平移上界溢出（前缀错则检查 b/c 抄录）。
+- **裁决词**：待复跑
+- **来源**：Hackvent 2018 Day 11 Crypt-o-math 3.0（medium/RSA）｜Writeup 仓（IceCTF 官方格式）｜raw/github-repos/shiltemann/2018_hackvent_h_day-11-crypt-o-math-3-0.md
+- **关联**：加 p 平移与 [[模 2^64 次幂开方链（Tonelli-Shanks + 单位根幂枚举收敛）]]（本批）的多解枚举同型；int_to_text 补零技巧是编码转换通用件。
+- **熵控预检**：Q1 无重名；Q3 强（gmpy2 会话全在 WP）；Q4 边 1 条。
+
+### SHA1 选择性碰撞工程应用（sha1collider 构造同哈希异内容双 QR）
+- **分层**：困难·流程
+- **假设**：服务端要求两文件 SHA1 相同但 QR 内容不同（"Hackvent" vs "Hacky Easter"）时，sha1collider（SHAttered 同族）对含差异的 PDF 前缀生成碰撞块即可批量构造；QR 生成后嵌 PDF 再 collide——密码学碰撞从理论到工程落地的完整样本。
+- **验证步骤**：1) qrencode 生成两张内容不同的 QR png；2) convert 转 PDF；3) python3 sha1collider/collide.py a.pdf b.pdf --progressive；4) 双文件上传触发服务端校验。
+- **判定标准**：PASS = 服务端返回 egg；FAIL = QR 解码失败（PDF 转换损失，改嵌入 PNG 容器变体）。
+- **裁决词**：待复跑
+- **来源**：HackyEaster 2018 Same Same (medium)｜Writeup 仓｜raw/github-repos/shiltemann/2018_hackyeaster_h_same-same.md
+- **关联**：与库内哈希条目构成"碰撞工程"增量（首个可复现碰撞应用链）；上传校验双条件（内容异+哈希同）的绕过面反哺 web 上传审计。
+- **熵控预检**：Q1 无重名（库内无 SHA1 碰撞工程条目）；Q3 强（工具链命令在 WP）；Q4 边 1 条。
+
+### AES-CBC 位翻转伪造 is_admin（debug 泄露结构定位）
+- **分层**：困难·单点
+- **假设**：cookie token 为 base64(AES-128-CBC(JSON)) 且站点开 debug cookie 时 console.log 打印明文结构 {"id":..,"is_admin":0,"username":".."}，则已知明文+CBC 分组链接性质允许翻转前一分组对应比特改变后一分组明文位：P2[bit] ^= C1[bit] 使 is_admin 由 0→1——无需密钥的密文操控。
+- **验证步骤**：1) 开 debug 读 console.log 明文结构定位字段偏移；2) base64 解 token 分 16 字节组；3) 对 is_admin 所在位异或翻转（P[i-16] ^= \x01）；4) 重组 base64 替换 cookie；5) 访问 admin panel。
+- **判定标准**：PASS = 面板放行；FAIL = 前一分组对应字节被 MAC/校验（找无校验字段）或偏移算错（逐位试翻转观察 debug 输出变化）。
+- **裁决词**：待复跑
+- **来源**：SharkyCTF 2020 Backflip in the kitchen｜Writeup 仓（ orangescape ）｜raw/github-repos/apoirrier/2020_sharkyctf_h_backflip.md
+- **关联**：与库内 padding oracle 条目构成 CBC 双攻击（位翻转 vs 填充预言，前者无需错误信道）；debug 端点泄露结构与 [[node-static CVE-2023-26111 路径穿越 + --inspect 调试端口 RCE]]（本批 web）的调试面泄漏同族。
+- **熵控预检**：Q1 与 padding oracle 条目区分（无 oracle 信道为增量）；Q3 强（结构与偏移在 WP）；Q4 边 2 条。
+
+### 截屏取证逆向 + glibc rand 种子重放（栈溢出控种子）
+- **分层**：困难·多段链
+- **假设**：无附件的"视频题"实为侦察题：screencast 中的源码/gcc 命令/反汇编截图拼出程序逻辑（scanf("%79s") 溢出覆盖未初始化 seed）——超长无空格用户名即可控制 srand(seed)；此后 numbers 数组按 rand()%5/rand()%26（模乘实现）生成，本地同 seed 重放即预测全部题目答案——"视频侦察→逆向重建→PRNG 重放"三段。
+- **验证步骤**：1) 逐帧抽源码/gcc(-fno-stack-protector)/汇编截图；2) 重建 C 源（initialize() 中 srand + 两处模乘取模）；3) 长名输入定 seed；4) 本地编译输出预测序列；5) 管道喂 nc 服务。
+- **判定标准**：PASS = 20 题全对拿到 flag；FAIL = rand 实现差异（glibc vs musl，按靶机 libc 选）或 scanf 截断长度不同。
+- **裁决词**：待复跑
+- **来源**：UIUCTF 2018 Important Videos (Misc 200p/10 solves)｜Writeup 仓｜raw/github-repos/perfectblue/2018_uiuctf_h_important-videos-200.md
+- **关联**：种子重放三连（[[exiftool 时间戳作随机种子的像素坐标洗牌还原]]、[[xlsx 零宽字符文档水印溯源（MagicText XOR + 种子重放）]]，本批）；"截屏考古"侦察法与 recon 域 OSINT 互证。
+- **熵控预检**：Q1 无重名；Q3 强（重建 C 源与命令在 WP）；Q4 边 2 条。
+
+### RSA 密文数字置换混淆（10! 枚举逆置换）
+- **分层**：困难·单点
+- **假设**：RSA 后再叠加数字替换置换（perm[str(x)]）的混合加密，因置换空间仅 10!≈3.6M 且 n 可 FactorDB 分解，直接枚举全部 digit permutation 逐个解 RSA 比分析置换更快——"低熵外层暴力+高熵内层查库"的混合攻击策略。
+- **验证步骤**：1) FactorDB 查 n 得 p,q（96bit×2）；2) itertools.permutations(range(10)) 生成逆置换；3) 对每个置换还原 c_rev；4) 标准 RSA 解密 long_to_bytes；5) grep "ctf" 过滤。
+- **判定标准**：PASS = 某置换解出 ctf{...}；FAIL = n 不在库（转 yafu 分解）。
+- **裁决词**：待复跑
+- **来源**：BxMCTF 2023 RAID Safety Assays, But Fixed｜daffainfo（github WP 仓）｜raw/github-repos/daffainfo/2023_bxmctf_h_raid-safety-assays-but-fixed.md
+- **关联**：与库内 RSA 条目构成"外层混淆剥离"增量；10! 枚举与 [[蚁剑 RSA 编码器流量解密 + 字符替换密钥穷举]]（本批 recon）的穷举法同型（3^k vs 10!）。
+- **熵控预检**：Q1 无重名；Q3 强（枚举脚本全在 WP）；Q4 边 1 条。
+
+### 动态步长 XOR 的最低位恢复攻击（奇偶驱动自同步）
+- **分层**：困难·流程
+- **假设**：加密器 c[i] = p[i] ^ p[i+space]，space 随 p[i] 奇偶 ±1 漂移时，cipher 最低位仅依赖两个 plaintext 位（parity 链），先解最低位方程组恢复全部 LSB，再以 LSB 已知为前提逐字节前向推导（space 序列由已恢复段决定）——分两阶段的已知明宣攻击（known-prefix："DCTF"）。
+- **验证步骤**：1) 用已知前缀+假设 space 初值推 LSB 链；2) verify 函数逐步校验 cipher 最低位一致性；3) LSB 全恢复后前向逐字节解 p[i]=c[i]^p[i+space]；4) 结尾字符按 space 越界分支校验。
+- **判定标准**：PASS = 解出可读 flag；FAIL = space 初值假设错（10 起点邻域扫描）或前缀不足（延长已知段）。
+- **裁决词**：待复跑
+- **来源**：DCTF 2015 Crypto 300 custom-function｜p4 (波兰战队)｜raw/github-repos/p4/2015_dctf_h_custom-function.md
+- **关联**：最低位侧信道与 [[RSA LSB 甲骨文二分恢复明文]]（库）的 LSB 主题呼应（泄露面 vs 攻击面）；自同步性分析可反哺流密码审计。
+- **熵控预检**：Q1 无重名；Q3 强（两阶段脚本与 PHP 转 Python 在 WP）；Q4 边 2 条。
+
+
+### RSA 故障签名挖掘 + 部分 d 低位恢复（n/4 LSB 定理）
+- **分层**：困难·流程
+- **假设**：坏盒子签名服务（CRT 参数注入故障）仅能泄露 d 的部分低位时，只要拿到 n/4 个 LSB 且 e 较小，即可用 partial key exposure 攻击恢复完整私钥：solve_mod 解 e*d0*X - k*X*(n-X+1) + k*n == X（mod 2^kbits）得 p 高位近似 p0，再 Coppersmith small_roots(X=2^(nbits/2-kbits), beta=0.3) 补齐 p，gcd 分解 n。
+- **验证步骤**：1) 挖掘故障签名还原 d0 低 300bit（同 broken_box 方法）；2) sage find_p 对 k=1..e 逐一试解；3) partial_p 用 small_roots 求根；4) gcd(2^kbits*x0+p0, n) 得 p；5) 标准解密。
+- **判定标准**：PASS = 分解出 p 且解出 flag；FAIL = kbits 不足（降 e 或增挖签名）或 beta 调参失败（0.3→0.4）。
+- **裁决词**：待复跑
+- **来源**：CSAW 2016 Still Broken Box (Crypto 400p)｜p4 (波兰战队)｜raw/github-repos/p4/2016_csaw_h_still-broken-box.md
+- **关联**：与 [[RSA LSB 甲骨文二分恢复明文]]（库）、[[RSA 最低有效字节甲骨文（LSB×8 预算约束）]] 构成 RSA LSB 三部曲（明文 oracle / 故障签名 / 部分私钥），本条是"密钥侧"收官；定理出处 UMD honors 报告 lowexprsa.pdf。
+- **熵控预检**：Q1 与库内 RSA 条目区分（partial d 为增量）；Q3 强（sage 脚本全文在 WP）；Q4 边 3 条。
+
+
+### 四字符分组独立哈希的逐组爆破（弱结构分治）
+- **分层**：困难·单点
+- **假设**：自定义哈希若按 4 字符分组独立压缩（每组产 2 hex），则 8 组目标可分治为 8 个 4 字符小空间（26^4≈45 万/组），itertools.permutations 逐组命中即拼出完整原象——"结构独立性发现"比逆向压缩函数本身更省力。
+- **验证步骤**：1) 读 hash 源码确认分组独立（无跨组状态）；2) target 按两位切分；3) 逐组枚举 4 字母组合计算比对；4) 拼接 32 字符口令。
+- **判定标准**：PASS = 8 组全中且口令可用；FAIL = 存在 padding 组（末组含 chr(n) 填充，按 pad 规则枚举）。
+- **裁决词**：待复跑
+- **来源**：easyCTF 2015 H4sh3D｜Writeup 仓（IceCTF 官方格式）｜raw/github-repos/shiltemann/2015_easyctf_h_h4sh3d.md
+- **关联**：分治爆破与 [[RSA 密文数字置换混淆（10! 枚举逆置换）]]（本批）的低熵层剥离同型；"先找结构弱点再动手"与 [[动态步长 XOR 的最低位恢复攻击（奇偶驱动自同步）]] 的两阶段法方法论一致。
+- **熵控预检**：Q1 无重名；Q3 强（哈希源码+爆破脚本在 WP）；Q4 边 1 条。

@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "0rangec3t/Black-cat（techniques/web.md 五段式范式）、PayloadsAllTheThings、book.hacktricks.xyz、M2 实测复跑（2026-10-15）"
 changelog:
+  - "[2026-11-02] v0.7：蒸馏 P4 批次并入 11 条（web_security 主标（3 条 readme/编程题型跳过留痕），hypothesis 待复跑；07 审阅 + 08 修正批已归零）｜源：ctf-corpus/distill/by-category/web/p4-20261030.md + candidates.jsonl（P4 批次报告 06、审阅报告 07、修正简报 08）"
   - "[2026-10-30] v0.6：蒸馏 P3 批次并入 8 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/web/p3-20261029.md + candidates.jsonl（P3 批次报告 02） + 修正批同步（46 修正批涉已入库条目，pilot/04-修正简报）（本文件 16 处）"
   - "[2026-10-29] v0.5：蒸馏 P1+P2 批次并入 23 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜源：ctf-corpus/distill 候选池（candidates.jsonl）+ distill/pilot/01-蒸馏批次报告-P2-20261029.md"
   - "[2026-10-15] 初始空壳，等待首个回流条目"
@@ -62,6 +63,17 @@ changelog:
 33. [WebAssembly 反调试逆向（wasm2wat 文本化 + debugger 循环）](#webassembly-反调试逆向wasm2wat-文本化-debugger-循环)（hypothesis）
 34. [zip 多态 MD5 碰撞（EOCD 解析歧义 + 幂等哈希校验）](#zip-多态-md5-碰撞eocd-解析歧义-幂等哈希校验)（hypothesis）
 35. [Bitcoin Script 合约解锁（P2SH 兑换脚本编写）](#bitcoin-script-合约解锁p2sh-兑换脚本编写)（hypothesis）
+36. [Mercurial .hg 目录泄露与历史版本恢复（hg update 时光机）](#mercurial-hg-目录泄露与历史版本恢复hg-update-时光机)（hypothesis）
+37. [区块链空交易分叉覆盖（DIFFICULTY 爆破 + backdoor 复用）](#区块链空交易分叉覆盖difficulty-爆破--backdoor-复用)（hypothesis）
+38. [PHP script 标签绕过正则删除上传（PHP5 历史限制）](#php-script-标签绕过正则删除上传php5-历史限制)（hypothesis）
+39. [MongoDB NoSQL 操作符注入登录（{"$gt":""} 空串通配）](#mongodb-nosql-操作符注入登录gt-空串通配)（hypothesis）
+40. [OAuth 邮箱 + 号归一化撞库接管（Dropbox 未验证邮箱滥用）](#oauth-邮箱--号归一化撞库接管dropbox-未验证邮箱滥用)（hypothesis）
+41. [IDOR hidden 字段批量发现（ffuf -mr 响应正则匹配）](#idor-hidden-字段批量发现ffuf--mr-响应正则匹配)（hypothesis）
+42. [node-static CVE-2023-26111 路径穿越 + --inspect 调试端口 RCE](#node-static-cve-2023-26111-路径穿越----inspect-调试端口-rce)（hypothesis）
+43. [路径段作 TLD 的解析歧义 SSRF（nip.io 回环直达内网目录）](#路径段作-tld-的解析歧义-ssrfnipio-回环直达内网目录)（hypothesis）
+44. [ReCaptcha 并发窗口绕过（token 复用 + 字典喷洒）](#recaptcha-并发窗口绕过token-复用--字典喷洒)（hypothesis）
+45. [WordPress 插件 0day 挖掘（diff-the-patch：对照修复版找未授权注入）](#wordpress-插件-0day-挖掘diff-the-patch对照修复版找未授权注入)（hypothesis）
+46. [未完成功能通道利用（邮件码直接回显响应体）](#未完成功能通道利用邮件码直接回显响应体)（hypothesis）
 
 ### JWT alg=none 签名绕过
 - **假设**：题面给 JWT 且改 payload 后返回 401/签名错误 → 服务端 JWT 库可能接受 `alg:"none"`（把 alg 当分支而非白名单校验），可空签名伪造任意身份。
@@ -389,3 +401,115 @@ changelog:
 - **裁决词**：待复跑
 - **来源**：Intents CTF 2021 BTC｜Dvd848 (S1扩容)｜raw/github-repos/Dvd848/2021_btc-md_h_btc.md（Pkscript hex 与解码步骤在 WP）
 - **关联**：与 [[游戏状态存 Flask cookie（rarity=0 取旗不可能 → 离线解码）]] 共享「读懂自定义状态编码再改写」思路；栈机语义与 [[自改写字节码 VM 谐振编程（三层变换 + 精确周期预算）]]同属栈式虚拟机域。
+
+### Mercurial .hg 目录泄露与历史版本恢复（hg update 时光机）
+- **分层**：困难·多段链
+- **假设**：响应头 Source-Control-Management-Type: Mercurial-SCM 直接暴露栈指纹；.hg 目录可访问时可导出仓库历史，hg update <旧 revision> 切回历史版本即读被删除的敏感文件（gerard_way2021.py）——git/svn 泄露的 Mercurial 冷门变体，dump 工具失效时手工拉 .hg/branch、.hg/requires 配 local repo 再 hg 命令操作。
+- **验证步骤**：1) 响应头确认 SCM 类型；2) hg-dumper 或手抓 .hg 元文件重建本地仓；3) hg log 看提交谱系；4) hg up <含敏感文件的 rev>；5) 读工作区文件。
+- **判定标准**：PASS = 历史版本文件含 flag；FAIL = .hg/dirstate 损坏（补全后 hg verify）或仓库已被 strip。
+- **裁决词**：待复跑
+- **来源**：LA CTF 2023 my chemical romance｜daffainfo（github WP 仓）｜raw/github-repos/daffainfo/2023_la-ctf_h_my-chemical-romance.md
+- **关联**：与 web 库 git 泄露条目（如有）构成 VCS 泄露全家桶增量（Mercurial 项）；"历史版本找回"与 [[energetic pixels 能量像素隐写（busysteg 论文工具反演）]] 同仓 sprintf 子题的"被删功能仍在历史"互证思路（选材留痕）。
+- **熵控预检**：Q1 无重名（库内无 .hg 条目）；Q3 强（hg 命令链在 WP）；Q4 边 1 条。
+
+### 区块链空交易分叉覆盖（DIFFICULTY 爆破 + backdoor 复用）
+- **分层**：困难·流程
+- **假设**：转账型链上题（create_transaction/create_block API）若头部之后可插入满足 DIFFICULTY 的空 transaction 区块，用全数字 nonce 爆破出合法 hash 后接长链即可分叉覆盖含黑客交易的旧链——空交易数组规避未知私钥签名，再用 backdoor 交易在新链上重放拿钻石。
+- **验证步骤**：1) 读取 head hash 与 DIFFICULTY（前 5 hex 零）；2) create_block(head, str(i), []) 递增 i 爆破至 int(hash,16)<DIFFICULTY；3) 追加空块直至链长超过原链；4) backdoor 转账 10000 得钻石；5) 再次覆盖+backdoor 得 flag。
+- **判定标准**：PASS = 新链被接受且 backdoor 生效两次；FAIL = 后续块需引用新 head（逐层传参）或 DIFFICULTY 提升（调爆破起点）。
+- **裁决词**：待复跑
+- **来源**：DDCTF 2018 Blockchain（pickle 收官）｜Writeup 仓｜raw/github-repos/susers/2018_ddctf_h_writeup_2.md
+- **关联**：链覆盖是共识层攻击的最小可复现样本；与 crypto 域哈希爆破条目共享"目标前缀爆破"原语。
+- **熵控预检**：Q1 无重名；Q3 强（爆破脚本全在 WP）；Q4 边 1 条。
+
+### PHP script 标签绕过正则删除上传（PHP5 历史限制）
+- **分层**：困难·单点
+- **假设**：上传点用 preg 删除 /<\?|php/ 全部匹配时，PHP5 的 <script language="PHP"> 备用标签可绕过（不含 <? 也不含小写 php）；system() 执行需大写绕过与小写删除的组合意识——仅适用 PHP<7（7 起移除 script/ASP 标签），复跑须锁定 PHP5 容器。
+- **验证步骤**：1) 试传 <?php 探测确认字符被删；2) 上传 <script language="PHP">system($_GET['c']);</script> 的 .php；3) 访问 /uploads/xxx.php?c=cat+/flag。
+- **判定标准**：PASS = 命令回显；FAIL = PHP≥7 环境标签失效（转 .htaccess/大小写混写 .pHtml 变体）。
+- **裁决词**：待复跑
+- **来源**：MMACTF 2015 Uploader (Web 100p)｜bl4de（github WP 仓）｜raw/github-repos/bl4de/2015_mmactf_h_uploader-web100.md
+- **关联**：与 web 库文件上传绕过条目（黑名单删除类）互补（本条为过滤删除型变体）；"环境版本前置确认"纪律与 [[SQL 盲注流量还原（二分阈值拐点法）]] 的拐点判定同属先侦察后攻击。
+- **熵控预检**：Q1 与库内上传条目区分（script 标签为增量）；Q3 强（payload 全在 WP）；Q4 边 1 条。
+
+### MongoDB NoSQL 操作符注入登录（{"$gt":""} 空串通配）
+- **分层**：困难·单点
+- **假设**：Node/Express + MongoDB 站点登录接口收 JSON 时，password 字段注入 {"$gt": ""} 使查询退化为"大于空串恒真"，配合已知用户名（the_admin，特权色 UI 暴露）直接过认证——URL 尾部 24 hex ObjectID 与响应头 X-Powered-By: Express 是指纹双子。
+- **验证步骤**：1) 观察题目 URL ObjectID 特征与 Express 头；2) http post /login username=the_admin password:='{"$gt":""}'；3) 会话 cookie 进入管理面板。
+- **判定标准**：PASS = 返回 200 且拿到 admin 会话；FAIL = 接口仅收 form（改 $regex 或 $ne 变体）或已装 mongo-sanitize。
+- **裁决词**：待复跑
+- **来源**：Hacky Easter 2019 Stackunderflow (#10)｜Writeup 仓（hacking-lab）｜raw/github-repos/verath_hacky-easter-2019/10-Stackunderflow/README.md
+- **关联**：NoSQL 操作符族（$gt/$ne/$regex）是 SQL 注入的 NoSQL 同构，与 web 库 SQLi 条目构成"注入面全景"增量；指纹识别（ObjectID+Express）可反哺 recon。
+- **熵控预检**：Q1 无重名（库内无 NoSQL 注入条目）；Q3 强（请求报文全在 WP）；Q4 边 1 条。
+
+### OAuth 邮箱 + 号归一化撞库接管（Dropbox 未验证邮箱滥用）
+- **分层**：超级难·多段链
+- **假设**：站点登录后发信把收件人邮箱 local part 的 +suffix 删除（test+1@x→test@x）但 OAuth 关联逻辑用原始邮箱比对时，攻击者在第三方 IdP（Dropbox，唯一返回未验证邮箱的提供商）注册 admin+anything@victim.meh，经 OAuth 登录即被站点按 + 号归一匹配成 admin——两个子系统对同一邮箱字符串的归一化规则不一致是账号接管根因。
+- **验证步骤**：1) /profile/1 确认目标 admin@footbook.meh；2) 验证站内发消息去 + 特性；3) dropbox.com 注册 admin+xxx@footbook.meh（不验证邮箱）；4) 站点 Dropbox OAuth 登录；5) 以 admin 身份读 flag。
+- **判定标准**：PASS = OAuth 回跳后获得 admin 会话；FAIL = IdP 强制邮箱验证（换 GitHub 等宽松 IdP）或站点比对用归一化后地址（试 dot 归一化变体）。
+- **裁决词**：待复跑
+- **来源**：HITCON Quals 2017 Footbook (155p 超级难)｜Writeup 仓（30 秒版）｜raw/github-repos/david942j/2017_hitcon-quals_x_footbook.md
+- **关联**：与 web 库 OAuth/SSO 条目（如有）构成归一化漏洞增量；"+ 号与 dot 语义"在 Gmail 生态同型，可直接迁移至真实 SRC 场景（撞库/接管）。
+- **熵控预检**：Q1 无重名；Q3 中（五步链在 WP，抓包细节未附）；Q4 边 2 条。
+
+### IDOR hidden 字段批量发现（ffuf -mr 响应正则匹配）
+- **分层**：困难·单点
+- **假设**：API 列表端点若在详情 JSON 中含 hidden 布尔字段，草稿机密帖即 hidden=true 的对象；ffuf 对 /post/FUZZ/ 全 ID 爆破并 -mr '"hidden":true' 一条命令定位隐藏资源——"字段级 IDOR+响应内容过滤"的组合拳。
+- **验证步骤**：1) Network 面板枚举出 /post/[0-9]/ 端点；2) 详情响应观察 hidden 字段分布；3) ffuf -w <id字典> -u /post/FUZZ/ -mr '"hidden":true'；4) 命中 ID 直接访问读 flag。
+- **判定标准**：PASS = 命中唯一 ID 且含 flag；FAIL = hidden 判断在前端（逐条 diff 响应字段）或需登录态（带 cookie 重跑）。
+- **裁决词**：待复跑
+- **来源**：SunshineCTF 2023 BeepBoop Blog｜daffainfo（github WP 仓）｜raw/github-repos/daffainfo/2023_sunshinectf_h_beepboop-blog.md
+- **关联**：与 web 库 IDOR 条目构成工具化增量（-mr 批量筛）；题面"drafts"语义提示法可反哺信息搜集域语义侦察。
+- **熵控预检**：Q1 与库内 IDOR 条目区分（-mr 批量为增量）；Q3 强（ffuf 命令在 WP）；Q4 边 1 条。
+
+### node-static CVE-2023-26111 路径穿越 + --inspect 调试端口 RCE
+- **分层**：困难·多段链
+- **假设**：package.json 出现 node-static 0.7.11 时（snyk 一查即中 CVE-2023-26111），服务器以 ./app 为 root 但请求 /../app.js --path-as-is 可穿出目录读源码；Dockerfile 显示 node --inspect 启动则 9229 调试端口暴露，DevTools 协议直接注入 JS 拿 RCE——"组件版本→CVE→源码泄露→调试面"四跳供应链链。
+- **验证步骤**：1) 审 package.json 依赖版本上 snyk 查 CVE；2) curl --path-as-is "http://site/../app.js" 读源；3) 从 Dockerfile/source 找 --inspect 与端口映射；4) 浏览器 chrome://inspect 连 ws://host:9229 注入 require('child_process') 读 flag。
+- **判定标准**：PASS = 调试协议执行命令回显 flag；FAIL = 9229 未映射公网（路径穿越下 SSRF 中转或读 app-logs 泄 flag）。
+- **裁决词**：待复跑
+- **来源**：CTFZone 2023 Quals Under construction｜Nightxade（github WP 仓）｜raw/github-repos/daffainfo/2023_ctfzone-quals_h_under-construction.md
+- **关联**：与 web 库供应链/依赖审计条目互链（本条给完整四跳可复现样本）；--inspect 暴露与移动域 WebView 远程调试面（如库内 adb 条目）同族。
+- **熵控预检**：Q1 无重名；Q3 强（CVE 编号+命令链在 WP）；Q4 边 2 条。
+
+
+### 路径段作 TLD 的解析歧义 SSRF（nip.io 回环直达内网目录）
+- **分层**：困难·多段链
+- **假设**：站点把 URL 路径段原样拼接为域名转发（/pleb{anything}→example.com{anything}）时，路径段即 TLD 语义：/pleb.127.0.0.1.nip.io 经 nip.io 通配解析回环，绕过 403/404 直击内网虚拟目录（/user/ 列目录）；尾点（pleb.）与 FQDN 语义差异（pleb~ vs pleb{X} 的 404/502 差）是识别转发逻辑的指纹——URL 解析器与代理转发的不一致攻击面。
+- **验证步骤**：1) 探测 /pleb.、/pleb~、/pleb{X} 响应差异确认转发；2) dnsbin 外带验证（/pleb.x.dnsbin.zhack.ca 收到 DNS 查询）；3) /pleb.127.0.0.1.nip.io 回环；4) 逐层访问 /user/、/admin/ 目录拿 flag。
+- **判定标准**：PASS = 回环后目录可列且含 flag；FAIL = 仅支持固定域（试 sslip.io/自建 wildcard DNS A 记录）。
+- **裁决词**：待复跑
+- **来源**：MidnightSun CTF 2019 Quals Bigspin (Web 424p/26 solved)｜Writeup 仓｜raw/github-repos/perfectblue/2019_midnightsun-ctf-quals_h_bigspin.md
+- **关联**：与 web 库 SSRF 条目构成"路径→域名拼接"变体增量；nip.io/sslip.io 回环工具与 [[C2 DNS 子域名 base32 外带 + HTTP 配置信道 xor_key 泄露]]（本批 recon）的 DNS 技巧互证。
+- **熵控预检**：Q1 与库内 SSRF 条目区分（TLD 歧义为增量）；Q3 强（探测/外带命令链在 WP）；Q4 边 2 条。
+
+### ReCaptcha 并发窗口绕过（token 复用 + 字典喷洒）
+- **分层**：困难·流程
+- **假设**：登录接口先 verify captcha token 再校验账密、且 token 有效期内可多次提交时，单个 token 生命周期内并发喷洒整个密码字典可绕过"每 token 一次尝试"限制——验证码只验证"是人"，不限制"一次"；多线程（grequests/线程池）带同一 token 批量 POST /verify 即可命中弱口令。
+- **验证步骤**：1) 抓 login 表单与 /verify 接口（username/password/token 三参）；2) 获取一个合法 token；3) 线程池并发 POST 全字典（username=admin）；4) 观察响应差异（成功提示/302）。
+- **判定标准**：PASS = 命中正确密码拿 flag；FAIL = token 单次失效（每轮新 token 配小批量重试）或接口限速（降并发加延时）。
+- **裁决词**：待复跑
+- **来源**：BSidesTLV 2019 Break the ReCaptcha (Web 500p)｜JCTF Team｜raw/github-repos/Dvd848/2019_break-the-recaptcha-md_h_break-the-recaptcha.md
+- **关联**：与 web 库验证码条目（图形码 OCR 族）构成并发族增量；"单 token 多用"与 [[MongoDB NoSQL 操作符注入登录（{"$gt":""} 空串通配）]]（本批）同为认证面绕过，可合并为登录绕过决策树。
+- **熵控预检**：Q1 与库内验证码条目区分（token 并发为增量）；Q3 强（源码+请求序列在 WP）；Q4 边 2 条。
+
+### WordPress 插件 0day 挖掘（diff-the-patch：对照修复版找未授权注入）
+- **分层**：困难·流程
+- **假设**：给定旧版插件（wordpress-popular-posts 4.2.2）与官方修复版 zip 时，diff 两版源码即定位安全修复点：4.2.3 修复了 REST 路由（popular-posts/v1/popular-posts）的未授权 SQL 注入/格式串（ORDER BY 拼接）；攻击链=老插件+无 nonce 校验+author 账户凭据（entry-point.sh 提供），最终 UNION 注入读 wp_users 凭据换 admin 会话——"补丁对比挖 0day"是 SRC 实战标准工作流。
+- **验证步骤**：1) 解包 4.2.2 与最新版 diff -r 找改动函数；2) 定位 REST handler 的查询构造（wpp_query 参数注入）；3) 构造 UNION SELECT 请求（token 免鉴权）；4) 提取 admin hash（或直接注入文件写）；5) 登录读 flag。
+- **判定标准**：PASS = 注入回显数据完整；FAIL = WAF 拦截（编码变形）或路由版本差异（对照路由注册表）。
+- **裁决词**：待复跑
+- **来源**：Chaos Communication Camp 2023 Such popular, much wow (Web)｜Nightxade（github WP 仓）｜raw/github-repos/daffainfo/2023_cccamp_h_such-popular-much-wow.md
+- **关联**：与 web 库 CMS 条目（WordPress 族）构成实战增量（0day 工作流）；diff 工作流与 [[node-static CVE-2023-26111 路径穿越 + --inspect 调试端口 RCE]]（本批）的"snyk 查版本"形成两路（源码 diff vs 漏洞库查询）。
+- **熵控预检**：Q1 与库内 WP 条目区分（diff 挖洞法为增量）；Q3 中（diff 与接口在 WP，完整 payload 未附）；Q4 边 2 条。
+
+
+### 未完成功能通道利用（邮件码直接回显响应体）
+- **分层**：困难·单点
+- **假设**：站点自述"邮件服务下个迭代再做"（Wee/TODO Send Mail）时，登录流程生成的 magic code 大概率直接 return 在响应里：POST /api/login {"email":"admin"} 响应体即验证码，/api/verify 提交后 Set-Cookie 发会话——开发中功能的半成品通道是最短登入路径。
+- **验证步骤**：1) 读 Flask 源（github 泄露）确认 get_code(name) 直接返回；2) curl /api/login 收 code；3) curl /api/verify 携 code 得 token cookie；4) 带 cookie 访问受保护页。
+- **判定标准**：PASS = 拿到会话进入内页；FAIL = 生产环境补了邮件（找 debug/log 端点泄露 code）。
+- **裁决词**：待复跑
+- **来源**：35C3 Junior 2018 Logged In (Web)｜Writeup 仓（MWR 风格）｜raw/github-repos/Dvd848/2018_logged-in-md_h_logged-in.md
+- **关联**：与 [[node-static CVE-2023-26111 路径穿越 + --inspect 调试端口 RCE]]（本批）同属"开发残留面"（半成品功能/调试端口）；TODO 注释侦察可与 web 库源码泄露条目互链。
+- **熵控预检**：Q1 无重名；Q3 强（源码+命令链在 WP）；Q4 边 1 条。

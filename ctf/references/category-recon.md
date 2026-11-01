@@ -4,6 +4,7 @@ status: verified
 # status 取值：hypothesis（假设）| verifying（验证中）| verified（复跑通过）| refuted（证伪，需附失败原因）| inconclusive（证据不足挂起）；旧词映射 draft≡hypothesis、deprecated≡refuted（见 ../../shared/REFLIGHT.md §1）
 source: "ctf-corpus 蒸馏层 P1+P2 批次（distill/by-category/recon），原始 WP 见 ctf-corpus/raw/ 与 meta/register.jsonl"
 changelog:
+  - "[2026-11-02] v0.7：蒸馏 P4 批次并入 14 条（数据安全主标续厚 + 信息搜集 4 + 隐写批次路由 2（DNS 外带/EXIF 定位），hypothesis 待复跑；07 审阅 + 08 修正批已归零）｜源：ctf-corpus/distill/by-category/recon/p4-20261030.md + candidates.jsonl（P4 批次报告 06、审阅报告 07、修正简报 08）"
   - "[2026-10-30] v0.6：蒸馏 P3 批次并入 29 条（中段困难档·薄域优先，hypothesis 待复跑）｜源：ctf-corpus/distill/by-category/recon/p3-20261029.md + candidates.jsonl（P3 批次报告 02）"
   - "[2026-10-30] 回流复跑轮：7 条全裁决（CSAW 逐跳链/EXIF 原图/w3w 三条 PASS——A 亲复跑抽检活体一致；聚餐/MV/采购三条 INCONCLUSIVE 但锚点级抽查全部命中；DNS storage INCONCLUSIVE 权威 NS 双亡）；证据归档 shared/wtf-reflight-evidence-20261030/"
   - "[2026-10-29] v0.5 新库：蒸馏 P1+P2 批次建库并入 7 条（hypothesis 待复跑，REFLIGHT §1 二手知识纪律）｜11→10 库映射见 ctf-wp 采集规划 §4.4"
@@ -58,6 +59,20 @@ changelog:
 34. [Modbus 功能码载荷 PDF 重组（9 字节偏移）+ 摩斯密码外链](#modbus-功能码载荷-pdf-重组9-字节偏移-摩斯密码外链)（hypothesis）
 35. [冰蝎默认密钥识别 + 同形字双马甄别（she1l vs shell）](#冰蝎默认密钥识别-同形字双马甄别she1l-vs-shell)（hypothesis）
 36. [NTLMv2 响应手工拆解（字段级 hash 形态）](#ntlmv2-响应手工拆解字段级-hash-形态)（hypothesis）
+37. [EXIF GPS 坐标反查拍摄地（牧场定位）](#exif-gps-坐标反查拍摄地牧场定位)（hypothesis）
+38. [EXIF GPS + User Comment 双字段地名推理（两州交界）](#exif-gps--user-comment-双字段地名推理两州交界)（hypothesis）
+39. [C2 DNS 子域名 base32 外带 + HTTP 配置信道 xor_key 泄露](#c2-dns-子域名-base32-外带--http-配置信道-xor_key-泄露)（hypothesis）
+40. [蚁剑 RSA 编码器流量解密 + 字符替换密钥穷举](#蚁剑-rsa-编码器流量解密--字符替换密钥穷举)（hypothesis）
+41. [哥斯拉 XOR 密钥字典爆破 + 流量批量解密（tshark 流水线）](#哥斯拉-xor-密钥字典爆破--流量批量解密tshark-流水线)（hypothesis）
+42. [工控流量确定性特征审计（固定长度/固定字段/时间间隔/逻辑关联/校验位五连问）](#工控流量确定性特征审计固定长度固定字段时间间隔逻辑关联校验位五连问)（hypothesis）
+43. [shiro-attacker 流量解密 + SerializationDumper 反序列化转储](#shiro-attacker-流量解密--serializationdumper-反序列化转储)（hypothesis）
+44. [xlsx 零宽字符文档水印溯源（MagicText XOR + 种子重放）](#xlsx-零宽字符文档水印溯源magictext-xor--种子重放)（hypothesis）
+45. [结构化敏感数据识别（手机/身份证/银行卡/邮箱四规则 + 行级全命中）](#结构化敏感数据识别手机身份证银行卡邮箱四规则--行级全命中)（hypothesis）
+46. [超期账号未回收审计（ExpiryDate × Status 交叉）](#超期账号未回收审计expirydate--status-交叉)（hypothesis）
+47. [数据脱敏四字段规则表（姓名/手机/身份证/银行卡/Email）](#数据脱敏四字段规则表姓名手机身份证银行卡email)（hypothesis）
+48. [数据完整性校验（校验和算法推导 + 不匹配行统计）](#数据完整性校验校验和算法推导--不匹配行统计)（hypothesis）
+49. [航空注册码 OSINT（登机牌 + flightradar24 航班历史交叉）](#航空注册码-osint登机牌--flightradar24-航班历史交叉)（hypothesis）
+50. [GitHub 句柄多栖侦察与诱饵识别（非默认分支 + 嵌套编码半段）](#github-句柄多栖侦察与诱饵识别非默认分支--嵌套编码半段)（hypothesis）
 
 ### recon 逐跳链解（人物 OSINT → 兴趣 → 常量异或谜面）
 - **分层**：简单档·可复现强
@@ -408,3 +423,145 @@ changelog:
 - **裁决词**：待复跑
 - **来源**：DASCTF 2024 弹道偏下｜Lunatic（A1natas）｜raw/team-blogs/goodlunatic/2024_dasctf_h_弹道偏下.md（NTLMv2 hash 样例全量在 WP）
 - **关联**：NTLMv2 三角之三（与 [[SMB2 NTLMv2 哈希提取与 hashcat 离线爆破]]、[[SMB2 NTLMv2 脚本提取 + 认证后文件回溯]] 组三角）；手工拆解与 [[SMB2 NTLMv2 脚本提取 + 认证后文件回溯]] 的脚本路径互为冗余双保险。
+
+### EXIF GPS 坐标反查拍摄地（牧场定位）
+- **分层**：困难·单点
+- **假设**：照片题不给地名时，exiftool 的 GPS Latitude/Longitude（度分秒格式）直接给坐标；换算十进制后 Google Maps 检索即得牧场名——元数据地理侧信道是 OSINT 常规起手。
+- **验证步骤**：1) exiftool photo.jpg 抓 GPS Position 字段；2) 度分秒转十进制（39°12'22.41"N→39.206225）；3) Google Maps 定位反查地名；4) 结合相机型号（SM-G973U 美版）与偏移时区（-05:00 密苏里）交叉。
+- **判定标准**：PASS = 定位到具体牧场名；FAIL = GPS 被抹（转视觉线索路径：地标/植被/车牌）。
+- **裁决词**：待复跑
+- **来源**：RSTCON 2024 CTF Unintended Reveal｜よっちん（yocchin のブログ）｜raw/team-blogs/yocchin/2024_rstcon-2024-ctf-online-hybrid_unintended-reveal.md
+- **关联**：与 [[EXIF GPS + User Comment 双字段地名推理（两州交界）]]（本批 RSTCON 2026）构成 GPS 定位双条（纯坐标 vs 坐标+语义提示）；与 [[AI 生图 PNG 元数据 Prompt/Negative Prompt 泄密]] 同属"元数据泄露"母题。
+- **熵控预检**：Q1 无重名（P1-P3 无 GPS 条目）；Q3 强（exiftool 输出全在 WP）；Q4 边 2 条。
+
+### EXIF GPS + User Comment 双字段地名推理（两州交界）
+- **分层**：困难·多段链
+- **假设**：GPS 坐标只给点不给名时，User Comment 等语义字段常藏关键提示（"one foot in each state"→两州界河桥）；坐标定粗位 + 注释语义定精位（41.2656N 95.9222W→Omaha 附近密苏里河 Bob Kerrey 人行桥，内布拉斯加/爱荷华两州交界；桥名为解者现实知识补充，原文仅坐标与"one foot in each state"注释）——双字段交叉推理。
+- **验证步骤**：1) exiftool 全字段；2) GPS 度分秒转十进制（41°15'56"N 95°55'20"W→41.2656,-95.9222）；3) User Comment 语义检索（"two states bridge near Omaha"）；4) 容差 500m 内提交。
+- **判定标准**：PASS = 双字段推理命中坐标点；FAIL = 注释语义误导（需回退纯地图检索）。
+- **裁决词**：待复跑
+- **来源**：RSTCON 2026 CTF Where in the World｜よっちん（yocchin のブログ）｜raw/team-blogs/yocchin/2026_rstcon-2026-ctf_where-in-the-world.md
+- **关联**：与上条（RSTCON 2024）构成 GPS 双条，本条增量＝语义字段交叉；OSINT 方法论与 recon 库既有条目互不重叠。
+- **熵控预检**：Q1 与上条区分（语义字段为增量）；Q3 强；Q4 边 2 条。
+
+### C2 DNS 子域名 base32 外带 + HTTP 配置信道 xor_key 泄露
+- **分层**：困难·多段链
+- **假设**：恶意流量中 HTTP 明文拉取的 staging 配置（mode=exfil/channel=dns/xor_key）与 DNS 子域名查询序列（s00-XXXX.exfil.c2.net 前缀序号分片）构成完整外带链：HTTP 泄密钥、DNS 载载荷；子域名去前缀拼接→base32 补 padding 解码→循环 XOR 密钥即得明文。
+- **验证步骤**：1) wireshark http 过滤定位 /staging.bin 配置包，抄 xor_key；2) dns 过滤出 exfil.deadface-c2.net 全部子域名；3) 按 s00/s01 序号去前缀拼接，尾部补 = 对齐；4) base32 解码；5) 与 key="Sp00ky" 循环 XOR。
+- **判定标准**：PASS = 解出语义完整明文（deadface{...}）；FAIL = 分片乱序（按包号 No. 重排）或非 base32（试 base16/64）。
+- **裁决词**：待复跑
+- **来源**：DEADFACE CTF 2026 Bad Guys Be Bad（Traffic Analysis 350）｜よっちん（yocchin のブログ）｜raw/team-blogs/yocchin/2026_deadface-ctf-2026_bad-guys-be-bad.md
+- **关联**：DNS 外带通道与 P3 recon 分区 [[DNS 外带重组（子域分片重排）+ 文件解密]] 构成数据外带主线续篇，本条增量＝HTTP 配置信道泄露密钥 + base32 分片带序号前缀；C2 侦察反哺数据安全审计。
+- **熵控预检**：Q1 无重名；Q3 强（拼接串与 XOR 脚本全在 WP）；Q4 边 2 条。
+
+
+### 蚁剑 RSA 编码器流量解密 + 字符替换密钥穷举
+- **分层**：困难·多段链
+- **假设**：HTTP 200 包里上传的 PHP webshell（openssl_public_decrypt + eval 拼接）表明攻击者用蚁剑 RSA 编码器：POST 参数是 RSA 公钥分块加密的命令流；CTF-NetA 导入公钥可一键解密。解出的命令若包含"secret 中 i/7 全替换为 x 后回显 + 原 secret 的 MD5"，则下一跳是 3^k 穷举替换位恢复 AES 密钥（product('i7x') 生成字典）+ MD5 逐个校验定位真值。
+- **验证步骤**：1) wireshark 过滤 200 找 zip/PHP 上传，抄公钥；2) CTF-NetA 导入公钥解密蚁剑流量；3) 从回显读混淆串与 MD5；4) product('i7x', repeat=len(x位)) 穷举生成候选；5) 逐候选 MD5 对照命中→得 AES 密钥→解 flag.txt 密文。
+- **判定标准**：PASS = MD5 命中且 AES 解出 flag；FAIL = 替换字符集扩展（加入其他可见混淆）或 AES 模式/IV 差异。
+- **裁决词**：待复跑
+- **来源**：楚慧杯 2024 特殊流量2｜Lunatic（A1natas）｜raw/team-blogs/goodlunatic/2024_ev_h_特殊流量2.md
+- **关联**：与 [[哥斯拉 XOR 密钥字典爆破 + 流量批量解密（tshark 流水线）]]（本批）构成 Webshell 加密流量双工具链（蚁剑 RSA vs 哥斯拉 XOR）；密钥穷举思路与 [[三图尾随 zip 拼接 + base 家族自动侦测套娃解码]]（本批）的字典生成互补。
+- **熵控预检**：Q1 无重名；Q3 强（webshell 源码与穷举脚本全在 WP）；Q4 边 2 条。
+
+### 哥斯拉 XOR 密钥字典爆破 + 流量批量解密（tshark 流水线）
+- **分层**：困难·流程
+- **假设**：pcap 中的哥斯拉（Godzilla）webshell 流量（PHP_XOR_BASE64 加密器）解密规律：密文 base64 解码后逐字节 XOR key[(i+1)&15]（16 字节密钥循环），再 gzip 解压；攻击者若在流里传过一个字典文件，用字典逐 key 试解（首包解出 "ok" 标志即命中）即可还原全部会话——密钥从流量自身找。
+- **验证步骤**：1) 定位流 11 中的字典数据；2) tshark -r x.pcap -Y http -T json -e http.file_data 批量提取载荷；3) urldecode 后按 xor_decode(data, key) + gunzip 试解；4) 字典循环命中 key（解压成功且含代码特征）；5) 全流量解密读命令。
+- **判定标准**：PASS = 找到密钥且解出全部命令；FAIL = 加密器变体（BASE64/eval 型无 gzip 层，去 gunzip 直读）。
+- **裁决词**：待复跑
+- **来源**：楚慧杯 2024 gza_Cracker｜Lunatic（A1natas）｜raw/team-blogs/goodlunatic/2024_ev_h_gza-cracker.md
+- **关联**：与 [[蚁剑 RSA 编码器流量解密 + 字符替换密钥穷举]]（本批）构成双链；与库内冰蝎条目（[[冰蝎已知密钥流量解密 + des3 salt 容器 + emoji 拼音密文]]）合并为三大 Webshell 加密流量对照（冰蝎 AES/哥斯拉 XOR/蚁剑 RSA）。
+- **熵控预检**：Q1 无重名；Q3 强（xor_decode/gunzip/tshark 脚本全在 WP）；Q4 边 2 条。
+
+### 工控流量确定性特征审计（固定长度/固定字段/时间间隔/逻辑关联/校验位五连问）
+- **分层**：简单·流程
+- **假设**：工业仿真流量中"哪些会话有确定性特征"类审计题可拆五问：①固定包长（ip.len 恒定）、②固定字段（data 前缀恒定如 2024）、③时间规律（帧间隔恒定如 0.06s）、④逻辑关联（多 IP 成组规律通信）、⑤校验算法定位（CRC16 在 data 首尾）——每问一个 wireshark 过滤器/IO 图即可程序化回答，答案拼接 MD5 交 flag 生成器。
+- **验证步骤**：1) 过滤器逐对 (ip.src,ip.dst) 统计 ip.len 方差→零方差会话；2) data 字段前缀扫描；3) IO Graph/时间列差分；4) 多 IP 会话交叉观察；5) CRC16/32 遍历起始/倒数位组合；6) 全部答案喂 flag.py。
+- **判定标准**：PASS = 五问答案全中且 MD5 通过；FAIL = 任一问偏差（如小数位数/排序规则），逐问回退重试（提交次数窗口内）。
+- **裁决词**：待复跑
+- **来源**：ISCC 2024 工业互联网模拟仿真数据分析（5 小问）｜Lunatic（A1natas）｜raw/cn-events/iscc2024/2024_iscc2024_工业互联网模拟仿真数据分析.md
+- **关联**：五问框架与 [[权限配置×操作日志双文件交叉违规检测（四违规码）]]（库）同属"规则化审计问句集"；工控场景与 P3 工控系列（[[Modbus 功能码载荷 PDF 重组（9 字节偏移）+ 摩斯密码外链]]、[[S7 写操作隐蔽通道重组（WRITE-only 过滤 + 凯撒 3 提示 + 红鲱鱼甄别）]]）互链，补齐确定性特征维度。
+- **熵控预检**：Q1 无重名；Q3 强（五问过滤器与答案全在 WP）；Q4 边 2 条。
+
+### shiro-attacker 流量解密 + SerializationDumper 反序列化转储
+- **分层**：困难·多段链
+- **假设**：Java 站流量若为 shiro-attacker 工具产生（rememberMe Cookie），其内置密钥字典按序尝试（本例第 10 个 MTIzNDU2Nzg5MGFiY2RlZg==）即可解密；解密前须剥去前 16 字节 IV，SerializationDumper 还原 Java 反序列化流读命令；结合请求头 GWHT 字段中的 echo 命令（echo pass>pass.txt 泄露 zip 密码）+ 响应 base64 中逆序的压缩包，构成"工具流量特征识别→密钥字典→反序列化→文件还原"完整链。
+- **验证步骤**：1) 渲染响应 HTML 用识图定位工具（shiro-attacker）；2) 按参考文章解密（内置字典逐个试）；3) 删 16 字节 IV 后 SerializationDumper 转储；4) 读命令序列，取 echo 的密码；5) base64 解码响应提取逆序 zip 还原图片。
+- **判定标准**：PASS = 反序列化转储可读 + 密码解开 zip；FAIL = 密钥非内置字典（需 expand）或 CB 链变体（对照 ysoserial 利用链特征）。
+- **裁决词**：待复跑
+- **来源**：羊城杯（GWHT）2024 miaoro｜Lunatic（A1natas）｜raw/team-blogs/goodlunatic/2024_ev_h_miaoro.md
+- **关联**：与 Webshell 双链（蚁剑/哥斯拉，本批）合并为加密 C2 流量三工具；图片宽高修复+猫猫字母表（第二段 flag）与 [[PNG chunk 解析定位尾随隐写]]（库）的图片工具链衔接。
+- **熵控预检**：Q1 无重名（库内无 shiro 流量条目）；Q3 强（密钥/工具链/命令序列全在 WP）；Q4 边 2 条。
+
+### xlsx 零宽字符文档水印溯源（MagicText XOR + 种子重放）
+- **分层**：超级难·多段链
+- **假设**：企业水印软件若用"secret 每字节 XOR random(0,255)（password 播种）→8bit→零宽字符映射（0=U+200C, 1=0x7F）→插入 xlsx sharedStrings.xml"的方案，则泄密溯源只需：xlsx 改 zip 解压读 sharedStrings.xml→正则提取零宽/DEL 序列→同 password 重放 randint 流逐字节 XOR 还原明文——弱随机数水印可完全重放（oxyry 标识符混淆不改变逻辑）。
+- **验证步骤**：1) 逆 oxyry 混淆还原算法（O0O0 型标识符人工替换或跑原类）；2) xlsx→zip→xl/sharedStrings.xml；3) 十六进制提取 \u200c/\x7f 序列；4) MagicText(password).remove_secret + 逆向 extract（重放 seed）逐字节 XOR；5) 员工信息按字母序 _ 连接 MD5 提交。
+- **判定标准**：PASS = 还原出姓名+手机后四位语义串；FAIL = chr_type 参数差异（六种不可见字符两两组合共 15 种，逐组试）或 password 未知（从题目上下文/文件元数据找）。
+- **裁决词**：待复跑
+- **来源**：某金融系统内部赛 2024 Finder（超级难）｜Lunatic（A1natas）｜raw/team-blogs/goodlunatic/2024_ev_h_finder.md
+- **关联**：与 [[双日志分段文件重组 + 盲水印取密码]]（库）构成水印双型（图像盲水印 vs 文档零宽）；零宽映射与 [[零宽变体选择符隐写（VS17-256 偏移分组解码）]]（库）、[[零宽字符隐写盲识别（vim 不可见字符定位）]]（本批）互链成"不可见字符"三角；PRNG 种子重放与 [[exiftool 时间戳作随机种子的像素坐标洗牌还原]]（本批）同型。
+- **熵控预检**：Q1 无重名；Q3 强（MagicText 类全文与解题脚本在 WP）；Q4 边 4 条。
+
+### 结构化敏感数据识别（手机/身份证/银行卡/邮箱四规则 + 行级全命中）
+- **分层**：困难·流程
+- **假设**：数据分类分级实操题的判定规则可完全程序化：手机号=11 位且前三段运营商格式；身份证=18 位含 GB11643-1999 加权校验位（出生日期域合法）；银行卡=19 位 Luhn 校验通过；邮箱=用户名@域名正则；仅当整行全部字段命中同型才算命中——脏数据（特征不满足）自动出局。
+- **验证步骤**：1) pandas 读 xlsx 逐行逐列；2) 四类规则各写校验器（身份证加权 mod 11、银行卡 Luhn 双倍交替）；3) 行内一致性判定（全命中才计数）；4) 统计总命中行数；5) 行数转字符串 MD5 提交。
+- **判定标准**：PASS = MD5 平台校验通过；FAIL = 规则边缘偏差（运营商号段/行政区码年度修订），逐类放宽/收紧重算。
+- **裁决词**：待复跑
+- **来源**：能源网络安全大赛 2025 结构化数据识别（社会组/能源组）｜CTF-Archives 官方存档（energyCTF2025）｜raw/cn-events/energy2025/2025_energy2025_结构化数据识别-2.md
+- **关联**：与 [[数据脱敏四字段规则表（姓名/手机/身份证/银行卡/Email）]]、[[数据完整性校验（校验和算法推导 + 不匹配行统计）]]（本批）构成数据治理三件套（识别/脱敏/完整性）；身份证加权校验与银行卡 Luhn 是通用校验器，可反哺录入侧防错。题面规则完备，附件数据复跑留待登记轮。
+- **熵控预检**：Q1 无重名；Q3 中（四规则题面给全，样例数据需附件）；Q4 边 2 条。
+
+### 超期账号未回收审计（ExpiryDate × Status 交叉）
+- **分层**：困难·单点
+- **假设**：账号生命周期审计的判定原子规则：ExpiryDate < 当前日期 且 Status == Active 即超期未回收；CSV 五字段（Username/CreatedAt/LastUsedAt/Status/ExpiryDate）单遍扫描即可统计——"最小审计单元"范式（时间属性 × 状态属性交叉断言）。
+- **验证步骤**：1) 读 accounts.csv；2) 逐行断言 (ExpiryDate < today) and (Status == 'Active')；3) 计数输出 flag{n}。
+- **判定标准**：PASS = 计数命中示例（alice/charlie 型=2）；FAIL = 日期比较字符串序陷阱（统一 YYYY-MM-DD 解析为 date 对象）。
+- **裁决词**：待复跑
+- **来源**：能源网络安全大赛 2025 超期账号未回收（能源组）｜CTF-Archives 官方存档（energyCTF2025）｜raw/cn-events/energy2025/2025_energy2025_超期账号未回收-2.md
+- **关联**：与 [[权限配置×操作日志双文件交叉违规检测（四违规码）]]（库）构成账号治理双断言（权限越界 vs 生命周期超期）；西湖论剑 2023 easy_tables（本批选材留痕）为四违规码条目的第二独立群证据。
+- **熵控预检**：Q1 无重名；Q3 中（规则题面给全+示例，附件复跑待登记轮）；Q4 边 2 条。
+
+### 数据脱敏四字段规则表（姓名/手机/身份证/银行卡/Email）
+- **分层**：困难·流程
+- **假设**：给定脱敏规则表（姓名按字数中段打星、手机中五位打星、身份证前 6 位保留、银行卡前 4 后 10 打星、Email@ 前非点字符打星、性别置未知），实现即字段级字符串变换函数集；先行后列拼接（不含表头）→MD5 提交——脱敏规则到代码的机械映射是数据防泄漏（DLP）落地基本功。
+- **验证步骤**：1) 按字段名 dispatch 各变换器（len(姓名)∈{2,3,4} 分支）；2) 逐行变换后按行拼接；3) 全表串 UTF-8 MD5 提交。
+- **判定标准**：PASS = MD5 校验通过；FAIL = 边界（四字姓名中间两位定义/Email 点保留）逐规则对照题面修正。
+- **裁决词**：待复跑
+- **来源**：能源网络安全大赛 2025 数据脱敏（yunnuuu.php）｜CTF-Archives 官方存档（energyCTF2025）｜raw/cn-events/energy2025/2025_energy2025_数据脱敏-2.md
+- **关联**：与 [[结构化敏感数据识别（手机/身份证/银行卡/邮箱四规则 + 行级全命中）]]（本批）构成"识别→脱敏"管线；羊城杯 2024 data-analy3 与浙江省赛 datasecurity_classify2（本批留痕）为同型第二/三证据。
+- **熵控预检**：Q1 无重名；Q3 中（规则表题面给全，附件复跑待登记轮）；Q4 边 3 条。
+
+### 数据完整性校验（校验和算法推导 + 不匹配行统计）
+- **分层**：困难·单点
+- **假设**：数据列 A/B 各带一列 Checksum 时，校验算法可从少量样本反推（sum/异或/CRC 变体），全列重算对照即得不匹配行数——"黑盒校验算法的样本反推"与密码学黑盒同型。
+- **验证步骤**：1) 读 xlsx 抽 A 列前几行数据与校验值；2) 候选算法逐一试（sum(bytes)/XOR 累加/CRC8 变体）；3) 命中算法后全列重算；4) 输出 "A列-n;B列-m" 格式 MD5 提交。
+- **判定标准**：PASS = 算法命中且 MD5 通过；FAIL = 算法带初值/多项式变体（扩候选集）。
+- **裁决词**：待复跑
+- **来源**：能源网络安全大赛 2025 数据完整性校验（能源组）｜CTF-Archives 官方存档（energyCTF2025）｜raw/cn-events/energy2025/2025_energy2025_数据完整性校验-2.md
+- **关联**：与数据治理三件套（识别/脱敏，本批）合并为完整 DLP 流程；算法反推思路与 [[工控流量确定性特征审计（固定长度/固定字段/时间间隔/逻辑关联/校验位五连问）]] 第五问（CRC 定位）互证。
+- **熵控预检**：Q1 无重名；Q3 中（题型与格式在题面，具体校验算法与数据需附件）；Q4 边 2 条。
+
+
+### 航空注册码 OSINT（登机牌 + flightradar24 航班历史交叉）
+- **分层**：困难·多段链
+- **假设**：登机牌照片可读出航班号+日期，flightradar24 反查该航班得机体注册码（如 4X-EHB）；再由"2018-02-22 Frankfurt→Tel Aviv"历史航班锁定同机飞行史，推知其返程日期取第二注册码——两段注册码拼接（1st-2nd）进入下一步攻击面（照片泄露溯源），航空公开数据是完整可回溯的 OSINT 矿脉。
+- **验证步骤**：1) 登机牌读 flight no + date；2) flightradar24 搜当日航班得 aircraft registration；3) 以注册码反查全部执飞历史；4) 定位 2018-02-22 FRA→TLV 班次；5) 由历史推返程日期取第二码；6) 拼接推进后续。
+- **判定标准**：PASS = 两段注册码均确认（机型/时刻交叉验证）；FAIL = 历史数据超期（换 FlightAware/Planespotters 照片库）。
+- **裁决词**：待复跑
+- **来源**：ASC Cyber Wargames Qualification 2023 Palestine Operation (OSINT)｜daffainfo（github WP 仓）｜raw/github-repos/daffainfo/2023_asc-cyber-wargames-qualification_h_palestine-operation.md
+- **关联**：与 [[EXIF GPS 坐标反查拍摄地（牧场定位）]]（本批）构成物理世界 OSINT 双通道（航空 vs 地理）；注册码-班次-日期三角交叉法可迁移至供应链侦察。
+- **熵控预检**：Q1 无重名（库内无航空 OSINT 条目）；Q3 中（路径在 WP，平台数据时效性为变数）；Q4 边 2 条。
+
+### GitHub 句柄多栖侦察与诱饵识别（非默认分支 + 嵌套编码半段）
+- **分层**：困难·流程
+- **假设**：仅给 handle（bobdev508）的 OSINT 题中，真实密钥常拆两半藏于"非默认分支/历史提交/其他平台（gist/steam/twitter）"；明面仓库里的 flag 形串（CTF{...} 前缀错误、自称 dummy）全是诱饵——正确前缀（CSSCTF{）+ 分片重组（一段明文一段编码如 rot13/base32）才是正解；"enumerate all, trust nothing"侦察纪律。
+- **验证步骤**：1) handle 全平台枚举（GitHub/gist/粘贴站）；2) 克隆仓库查全分支全历史（git log --all / GitHub API branches）；3) 剔除错误前缀诱饵；4) 找出两半分片（一段在分支、一段在历史或外站）；5) 解码拼接出 CSSCTF{...}。
+- **判定标准**：PASS = 拼出合法前缀完整 key；FAIL = 分片在外部平台（查 profile 链接/邮箱 gravatar 反查）。
+- **裁决词**：待复跑
+- **来源**：CSS CTF 2026 Return of Nexus Dead Faction Servers (OSINT 10p/349 solved)｜daffainfo（github WP 仓）｜raw/github-repos/hax1ng_css-ctf-2026-return-of-nexus/osint/dead-faction-servers/README.md
+- **关联**：与 [[Mercurial .hg 目录泄露与历史版本恢复（hg update 时光机）]]（本批 web）构成"历史层侦察"双样本（代码托管平台历史/分支完整性）；诱饵识别（前缀校验）与 [[多时区日志归一化排序还原（sonar 十六进制字符流）]] 的"格式自证"互证。
+- **熵控预检**：Q1 无重名；Q3 强（诱饵表+分片路径在 WP）；Q4 边 2 条。
